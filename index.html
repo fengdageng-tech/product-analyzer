@@ -346,17 +346,18 @@
 <div class="panel" id="panel-history">
   <div id="statsPanel"></div>
   <div class="sync-section">
-    <div class="sync-title">☁ GitHub 云同步</div>
-    <div id="syncSetup" style="display:none;">
+    <div class="sync-title">☁ 云端同步</div>
+    <div style="font-size:11px;color:var(--muted);margin-bottom:8px;">⬇ 下载不需要账号 · ☁ 上传需要 GitHub Token</div>
+    <div class="sync-row">
+      <button class="btn-sync up" id="btnUpload" onclick="uploadToGithub()">☁ 上传</button>
+      <button class="btn-sync down" id="btnDownload" onclick="downloadFromGithub()">⬇ 下载</button>
+    </div>
+    <div id="tokenRow" style="display:none;">
       <div class="sync-row">
         <input id="githubToken" type="password" placeholder="粘贴 GitHub Token">
         <button class="btn-sync" onclick="saveToken()">💾 保存</button>
       </div>
-      <div style="font-size:11px;color:var(--muted);margin-bottom:8px;">Token 仅存在本设备，不上传云端</div>
-    </div>
-    <div class="sync-row">
-      <button class="btn-sync up" id="btnUpload" onclick="uploadToGithub()">☁ 上传到云端</button>
-      <button class="btn-sync down" id="btnDownload" onclick="downloadFromGithub()">⬇ 从云端下载</button>
+      <div style="font-size:11px;color:var(--muted);margin-bottom:4px;">Token 仅存在本设备</div>
     </div>
     <label class="auto-sync-label">
       <input type="checkbox" id="autoSyncCheck" onchange="toggleAutoSync()"> 每次分析后自动上传到云端
@@ -1193,20 +1194,17 @@ async function uploadToGithub() {
 }
 
 async function downloadFromGithub() {
-  const token = getToken();
-  if (!token) { showTokenPrompt(); return; }
   setSyncStatus('⏳ 下载中...', '');
   try {
-    const res = await fetch(GITHUB_API, { headers: { Authorization: 'Bearer ' + token } });
+    // Download from GitHub Pages — no token needed (public read)
+    const url = 'https://fengdageng-tech.github.io/product-analyzer/data.json?_=' + Date.now();
+    const res = await fetch(url);
     if (!res.ok) {
-      if (res.status === 401) { setSyncStatus('Token 无效', 'err'); showTokenPrompt(); }
-      else if (res.status === 404) { setSyncStatus('云端暂无数据，请先上传', 'err'); }
+      if (res.status === 404) { setSyncStatus('云端暂无数据，请先在电脑上传', 'err'); }
       else { setSyncStatus('下载失败: ' + res.status, 'err'); }
       return;
     }
-    const info = await res.json();
-    const content = decodeURIComponent(escape(atob(info.content.replace(/\s/g, ''))));
-    const remote = JSON.parse(content);
+    const remote = await res.json();
     if (!Array.isArray(remote)) throw new Error('格式错误');
     // Merge: remote data wins for same asin
     const local = loadProducts();
@@ -1219,22 +1217,21 @@ async function downloadFromGithub() {
     saveProducts(merged);
     renderProductList();
     renderStats();
-    setSyncStatus('✅ 已从云端下载 · ' + remote.length + '条记录', 'ok');
-    showToast('⬇ 已从云端同步 ' + remote.length + '条');
+    setSyncStatus('✅ 已同步 ' + remote.length + '条记录', 'ok');
+    showToast('⬇ 已同步 ' + remote.length + '条');
   } catch(e) {
-    setSyncStatus('下载失败，数据格式错误', 'err');
+    setSyncStatus('下载失败，网络错误或云端无数据', 'err');
   }
 }
 
 function showTokenPrompt() {
-  const setup = document.getElementById('syncSetup');
-  if (setup) setup.style.display = 'block';
+  document.getElementById('tokenRow').style.display = 'block';
   document.getElementById('githubToken').focus();
 }
 
 function initSyncUI() {
   const hasToken = !!getToken();
-  document.getElementById('syncSetup').style.display = hasToken ? 'none' : 'block';
+  document.getElementById('tokenRow').style.display = hasToken ? 'none' : 'block';
   document.getElementById('autoSyncCheck').checked = isAutoSync();
   document.getElementById('githubToken').value = '';
 }
