@@ -1,0 +1,180 @@
+[
+  {
+    "productName": "Sage Green Kitchen Towels Set of 2（鼠尾草绿厨房毛巾 2件装）",
+    "asin": "B0GCFJGVFG",
+    "price": "17.99",
+    "monthlySales": "2010",
+    "reviewCount": "26",
+    "rating": "3.8",
+    "cost1688": "10.50",
+    "negativeReviews": "面料太薄，吸水性差\n颜色跟图片不一样，实物偏暗\n太薄了不值这个价\n当装饰还行，吸水真的不行\n好看是好看，质量一般\n有点薄，当抹布都不吸水\n颜色好看但布料太透了\n吸水性不如普通洗碗巾",
+    "adCostType": null,
+    "adCostValue": null,
+    "result": {
+      "price": 17.99,
+      "sales": 2010,
+      "reviews": 26,
+      "rating": 3.8,
+      "costCNY": 10.5,
+      "costUSD": "1.45",
+      "referralFee": "2.70",
+      "fbaFee": "4.50",
+      "landedRevenue": "10.79",
+      "shippingPerUnit": "0.45",
+      "grossProfit": "8.89",
+      "grossMargin": "49.4",
+      "adCostType": null,
+      "adCostValue": 0,
+      "adSpend": "0.00",
+      "netProfit": "8.89",
+      "netMargin": "49.4",
+      "beUnits": 5,
+      "beDays": 1,
+      "reviewLevel": "green",
+      "reviewLabel": "低门槛 · 新品可进",
+      "ratingLevel": "yellow",
+      "categories": {
+        "面料偏薄": {
+          "count": 4,
+          "type": "bad",
+          "examples": [
+            "面料太薄",
+            "太薄了不值这个价"
+          ]
+        },
+        "吸水性差": {
+          "count": 4,
+          "type": "bad",
+          "examples": [
+            "吸水性差",
+            "吸水真的不行"
+          ]
+        },
+        "颜色/色差": {
+          "count": 1,
+          "type": "bad",
+          "examples": [
+            "颜色跟图片不一样"
+          ]
+        },
+        "其他": {
+          "count": 1,
+          "type": "neutral",
+          "examples": []
+        },
+        "装饰用途": {
+          "count": 1,
+          "type": "neutral",
+          "examples": [
+            "当装饰还行"
+          ]
+        },
+        "正向评价": {
+          "count": 1,
+          "type": "good",
+          "examples": [
+            "好看是好看"
+          ]
+        },
+        "质量感差": {
+          "count": 1,
+          "type": "bad",
+          "examples": [
+            "质量一般"
+          ]
+        }
+      },
+      "totalLines": 13,
+      "badCategories": [
+        [
+          "面料偏薄",
+          {
+            "count": 4,
+            "type": "bad",
+            "examples": [
+              "面料太薄",
+              "太薄了不值这个价"
+            ]
+          }
+        ],
+        [
+          "吸水性差",
+          {
+            "count": 4,
+            "type": "bad",
+            "examples": [
+              "吸水性差",
+              "吸水真的不行"
+            ]
+          }
+        ],
+        [
+          "颜色/色差",
+          {
+            "count": 1,
+            "type": "bad",
+            "examples": [
+              "颜色跟图片不一样"
+            ]
+          }
+        ],
+        [
+          "质量感差",
+          {
+            "count": 1,
+            "type": "bad",
+            "examples": [
+              "质量一般"
+            ]
+          }
+        ]
+      ],
+      "topBad": [
+        [
+          "面料偏薄",
+          {
+            "count": 4,
+            "type": "bad",
+            "examples": [
+              "面料太薄",
+              "太薄了不值这个价"
+            ]
+          }
+        ],
+        [
+          "吸水性差",
+          {
+            "count": 4,
+            "type": "bad",
+            "examples": [
+              "吸水性差",
+              "吸水真的不行"
+            ]
+          }
+        ],
+        [
+          "颜色/色差",
+          {
+            "count": 1,
+            "type": "bad",
+            "examples": [
+              "颜色跟图片不一样"
+            ]
+          }
+        ]
+      ],
+      "fixableCount": 10,
+      "hardCount": 0,
+      "totalBad": 10,
+      "verdict": "能做",
+      "verdictClass": "go"
+    },
+    "competitors": [],
+    "imageData": {
+      "type": "url",
+      "value": "https://m.media-amazon.com/images/I/81HLX-ctGyL._AC_SL1500_.jpg"
+    },
+    "manualNote": "",
+    "createdAt": "2026-06-14T20:49:40.699Z"
+  }
+]
