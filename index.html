@@ -195,19 +195,28 @@
   .seg.skip { background: var(--red); }
 
   /* GitHub Sync */
-  .sync-section { background: var(--card); border: 1px solid var(--border); border-radius: 10px; padding: 14px; margin-bottom: 14px; }
-  .sync-section .sync-title { font-size: 13px; font-weight: 700; color: var(--accent); margin-bottom: 8px; }
-  .sync-row { display: flex; gap: 8px; margin-bottom: 8px; }
-  .sync-row input { flex: 1; font-size: 12px; padding: 8px 10px; }
-  .btn-sync { padding: 8px 14px; font-size: 12px; border-radius: 8px; cursor: pointer; font-weight: 600; font-family: inherit; white-space: nowrap; flex-shrink: 0; border: 1px solid var(--border); background: transparent; color: var(--text); transition: all 0.2s; }
+  .sync-section { background: var(--card); border: 1px solid var(--border); border-radius: 10px; padding: 10px 14px; margin-bottom: 14px; }
+  .sync-section .sync-title { font-size: 12px; font-weight: 700; color: var(--accent); margin-bottom: 2px; }
+  .sync-section .sync-sub { font-size: 10px; color: var(--muted); margin-bottom: 8px; }
+  .sync-row { display: flex; gap: 6px; margin-bottom: 6px; }
+  .sync-row input { flex: 1; font-size: 12px; padding: 6px 8px; }
+  .btn-sync { padding: 6px 12px; font-size: 11px; border-radius: 6px; cursor: pointer; font-weight: 600; font-family: inherit; white-space: nowrap; flex-shrink: 0; border: 1px solid var(--border); background: transparent; color: var(--text); transition: all 0.2s; }
   .btn-sync.up { border-color: var(--accent); color: var(--accent); }
   .btn-sync.down { border-color: var(--green); color: var(--green); }
   .btn-sync:active { transform: scale(0.97); opacity: 0.8; }
-  .sync-status { font-size: 11px; margin-top: 4px; }
+  .sync-status { font-size: 11px; margin-top: 4px; min-height: 16px; }
   .sync-status.ok { color: var(--green); }
   .sync-status.err { color: var(--red); }
-  .auto-sync-label { display: flex; align-items: center; gap: 8px; font-size: 12px; color: var(--muted); cursor: pointer; user-select: none; }
-  .auto-sync-label input[type=checkbox] { width: auto; accent-color: var(--accent); }
+  .auto-sync-row { display: flex; align-items: center; justify-content: space-between; margin-top: 6px; padding-top: 6px; border-top: 1px solid var(--border); }
+  .auto-sync-label { display: flex; align-items: center; gap: 8px; font-size: 11px; color: var(--muted); cursor: pointer; user-select: none; }
+  /* Custom toggle */
+  .auto-sync-label input[type=checkbox] { display: none; }
+  .toggle-track { width: 36px; height: 20px; border-radius: 10px; background: var(--border); position: relative; transition: background 0.2s; flex-shrink: 0; }
+  .toggle-track::after { content: ''; position: absolute; top: 2px; left: 2px; width: 16px; height: 16px; border-radius: 50%; background: #fff; transition: transform 0.2s; }
+  .auto-sync-label input:checked + .toggle-track { background: var(--accent); }
+  .auto-sync-label input:checked + .toggle-track::after { transform: translateX(16px); }
+  .token-link { font-size: 11px; color: var(--muted); cursor: pointer; text-decoration: underline; text-underline-offset: 2px; }
+  .token-link:hover { color: var(--accent); }
 
   /* Override */
   .override-bar { display: flex; gap: 6px; margin-top: 8px; flex-wrap: wrap; }
@@ -347,7 +356,7 @@
   <div id="statsPanel"></div>
   <div class="sync-section">
     <div class="sync-title">☁ 云端同步</div>
-    <div style="font-size:11px;color:var(--muted);margin-bottom:8px;">⬇ 下载不需要账号 · ☁ 上传需要 GitHub Token</div>
+    <div class="sync-sub">下载免登录 · 上传需 Token（<span class="token-link" onclick="showTokenPrompt()">设置</span>）</div>
     <div class="sync-row">
       <button class="btn-sync up" id="btnUpload" onclick="uploadToGithub()">☁ 上传</button>
       <button class="btn-sync down" id="btnDownload" onclick="downloadFromGithub()">⬇ 下载</button>
@@ -355,14 +364,17 @@
     <div id="tokenRow" style="display:none;">
       <div class="sync-row">
         <input id="githubToken" type="password" placeholder="粘贴 GitHub Token">
-        <button class="btn-sync" onclick="saveToken()">💾 保存</button>
+        <button class="btn-sync" onclick="saveToken()">💾</button>
       </div>
-      <div style="font-size:11px;color:var(--muted);margin-bottom:4px;">Token 仅存在本设备</div>
     </div>
-    <label class="auto-sync-label">
-      <input type="checkbox" id="autoSyncCheck" onchange="toggleAutoSync()"> 每次分析后自动上传到云端
-    </label>
-    <div class="sync-status" id="syncStatus"></div>
+    <div class="auto-sync-row">
+      <label class="auto-sync-label">
+        <input type="checkbox" id="autoSyncCheck" onchange="toggleAutoSync()">
+        <span class="toggle-track"></span>
+        分析后自动上传
+      </label>
+      <div class="sync-status" id="syncStatus"></div>
+    </div>
   </div>
   <div style="display: flex; gap: 8px; margin-bottom: 16px;">
     <button class="btn btn-outline btn-sm" style="flex:1" onclick="document.getElementById('importFile').click()">📥 导入</button>
