@@ -1277,16 +1277,50 @@ function escapeHtml(str) {
 
 // ==================== INIT ====================
 (function init() {
-  // Pre-fill demo data
-  document.getElementById('productName').value = 'Sage Green Kitchen Towels Set of 2（鼠尾草绿厨房毛巾 2件装）';
-  document.getElementById('asin').value = 'B0GCFJGVFG';
-  document.getElementById('price').value = '17.99';
-  document.getElementById('monthlySales').value = '2010';
-  document.getElementById('reviewCount').value = '26';
-  document.getElementById('rating').value = '3.9';
-  document.getElementById('cost1688').value = '10.50';
-  document.getElementById('negativeReviews').value = '面料太薄，吸水性差\n颜色跟图片不一样，实物偏暗\n太薄了不值这个价\n当装饰还行，吸水真的不行\n好看是好看，质量一般\n有点薄，当抹布都不吸水\n颜色好看但布料太透了\n吸水性不如普通洗碗巾';
+  // Pre-fill demo data only if no data exists
+  var hasData = loadProducts().length > 0;
+  if (!hasData) {
+    document.getElementById('productName').value = 'Sage Green Kitchen Towels Set of 2（鼠尾草绿厨房毛巾 2件装）';
+    document.getElementById('asin').value = 'B0GCFJGVFG';
+    document.getElementById('price').value = '17.99';
+    document.getElementById('monthlySales').value = '2010';
+    document.getElementById('reviewCount').value = '26';
+    document.getElementById('rating').value = '3.9';
+    document.getElementById('cost1688').value = '10.50';
+    document.getElementById('negativeReviews').value = '面料太薄，吸水性差\n颜色跟图片不一样，实物偏暗\n太薄了不值这个价\n当装饰还行，吸水真的不行\n好看是好看，质量一般\n有点薄，当抹布都不吸水\n颜色好看但布料太透了\n吸水性不如普通洗碗巾';
+  }
+
+  // Auto-pull from cloud on page load (free, no token needed)
+  autoPullFromCloud();
 })();
+
+async function autoPullFromCloud() {
+  try {
+    var url = 'https://fengdageng-tech.github.io/product-analyzer/data.json?_=' + Date.now();
+    var res = await fetch(url, { cache: 'no-cache' });
+    if (!res.ok) return;
+    var remote = await res.json();
+    if (!Array.isArray(remote) || !remote.length) return;
+    var local = loadProducts();
+    if (!local.length) {
+      // New device, no local data — just load from cloud
+      saveProducts(remote);
+      return;
+    }
+    // Merge: remote data wins, keep local-only entries
+    var merged = remote.slice();
+    var seen = new Set(merged.map(function(p) { return p.asin || p.productName || ''; }));
+    local.forEach(function(p) {
+      var key = p.asin || p.productName || '';
+      if (!seen.has(key)) { merged.push(p); seen.add(key); }
+    });
+    if (merged.length !== local.length) {
+      saveProducts(merged);
+    }
+  } catch(e) {
+    // Silent fail — cloud sync is optional
+  }
+}
 </script>
 
 </body>
