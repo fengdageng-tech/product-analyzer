@@ -1,0 +1,673 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>跨境产品开发 · 分析报告工具</title>
+<style>
+  :root {
+    --bg: #0f172a;
+    --card: #1e293b;
+    --border: #334155;
+    --text: #e2e8f0;
+    --muted: #94a3b8;
+    --accent: #38bdf8;
+    --green: #4ade80;
+    --yellow: #fbbf24;
+    --red: #f87171;
+    --purple: #a78bfa;
+    --input-bg: #0f172a;
+    --radius: 12px;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.6;
+    padding: 16px;
+    max-width: 680px;
+    margin: 0 auto;
+  }
+
+  h1 {
+    font-size: 20px;
+    text-align: center;
+    margin-bottom: 4px;
+    background: linear-gradient(135deg, var(--accent), var(--purple));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+  .subtitle { text-align: center; color: var(--muted); font-size: 13px; margin-bottom: 20px; }
+
+  /* Tabs */
+  .tabs { display: flex; gap: 8px; margin-bottom: 16px; }
+  .tab {
+    flex: 1; text-align: center; padding: 10px 8px; border-radius: 8px;
+    font-size: 13px; font-weight: 600; cursor: pointer; background: var(--card);
+    border: 1px solid var(--border); color: var(--muted); transition: all 0.2s;
+  }
+  .tab.active { background: var(--accent); color: #0f172a; border-color: var(--accent); }
+
+  /* Panels */
+  .panel { display: none; }
+  .panel.active { display: block; }
+
+  /* Form */
+  .form-group { margin-bottom: 14px; }
+  label { display: block; font-size: 13px; font-weight: 600; margin-bottom: 4px; color: var(--muted); }
+  label .unit { font-weight: 400; color: var(--muted); }
+  input, textarea, select {
+    width: 100%; padding: 10px 12px; border-radius: 8px; border: 1px solid var(--border);
+    background: var(--input-bg); color: var(--text); font-size: 15px;
+    font-family: inherit; resize: vertical; -webkit-appearance: none;
+  }
+  textarea { min-height: 80px; }
+  input:focus, textarea:focus, select:focus {
+    outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px rgba(56,189,248,0.15);
+  }
+  .row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .row-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; }
+
+  /* Buttons */
+  .btn {
+    display: block; width: 100%; padding: 12px; border-radius: 8px; font-size: 15px;
+    font-weight: 700; cursor: pointer; border: none; transition: all 0.2s; text-align: center;
+  }
+  .btn-primary { background: var(--accent); color: #0f172a; }
+  .btn-primary:active { transform: scale(0.98); opacity: 0.9; }
+  .btn-outline { background: transparent; border: 1.5px solid var(--border); color: var(--text); margin-top: 8px; }
+  .btn-sm { display: inline; padding: 6px 14px; font-size: 12px; width: auto; border-radius: 6px; }
+  .btn-danger { background: transparent; border: 1px solid var(--red); color: var(--red); font-size: 12px; padding: 6px 12px; border-radius: 6px; cursor: pointer; }
+
+  /* Report Card */
+  .card {
+    background: var(--card); border: 1px solid var(--border); border-radius: var(--radius);
+    padding: 20px; margin-bottom: 14px;
+  }
+  .card-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 12px; }
+  .product-name { font-size: 17px; font-weight: 700; line-height: 1.4; }
+  .verdict {
+    padding: 6px 14px; border-radius: 20px; font-size: 13px; font-weight: 700;
+    white-space: nowrap; flex-shrink: 0; margin-left: 8px;
+  }
+  .verdict.go { background: rgba(74,222,128,0.15); color: var(--green); border: 1px solid rgba(74,222,128,0.3); }
+  .verdict.wait { background: rgba(251,191,36,0.15); color: var(--yellow); border: 1px solid rgba(251,191,36,0.3); }
+  .verdict.skip { background: rgba(248,113,113,0.15); color: var(--red); border: 1px solid rgba(248,113,113,0.3); }
+
+  .metric-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; margin-bottom: 14px; }
+  .metric {
+    text-align: center; padding: 10px 6px; border-radius: 8px;
+    background: rgba(255,255,255,0.03); border: 1px solid var(--border);
+  }
+  .metric .value { font-size: 20px; font-weight: 800; }
+  .metric .label { font-size: 11px; color: var(--muted); margin-top: 2px; }
+  .metric .value.green { color: var(--green); }
+  .metric .value.yellow { color: var(--yellow); }
+  .metric .value.red { color: var(--red); }
+  .metric .value.blue { color: var(--accent); }
+
+  .section-title { font-size: 13px; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 8px; margin-top: 16px; }
+  .tag-list { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 8px; }
+  .tag {
+    padding: 5px 10px; border-radius: 6px; font-size: 12px; font-weight: 600;
+    background: rgba(56,189,248,0.1); color: var(--accent); border: 1px solid rgba(56,189,248,0.2);
+  }
+  .tag.bad {
+    background: rgba(248,113,113,0.1); color: var(--red); border: 1px solid rgba(248,113,113,0.2);
+  }
+  .tag.neutral {
+    background: rgba(148,163,184,0.1); color: var(--muted); border: 1px solid rgba(148,163,184,0.2);
+  }
+
+  .reason-box {
+    background: var(--input-bg); border-radius: 8px; padding: 14px;
+    border-left: 3px solid var(--accent); font-size: 14px; line-height: 1.8;
+  }
+  .reason-box li { margin-left: 16px; margin-bottom: 4px; }
+  .reason-box li::marker { color: var(--accent); }
+
+  /* Product List */
+  .product-item {
+    background: var(--card); border: 1px solid var(--border); border-radius: 10px;
+    padding: 14px; margin-bottom: 10px; cursor: pointer; transition: all 0.2s;
+  }
+  .product-item:active { border-color: var(--accent); }
+  .product-item .top { display: flex; justify-content: space-between; align-items: center; }
+  .product-item .name { font-weight: 700; font-size: 15px; flex: 1; }
+  .product-item .meta { font-size: 12px; color: var(--muted); margin-top: 4px; }
+  .product-item .actions { display: flex; gap: 6px; margin-top: 8px; }
+  .empty-state { text-align: center; color: var(--muted); padding: 40px 20px; }
+
+  /* Toast */
+  .toast {
+    position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%);
+    background: var(--accent); color: #0f172a; padding: 10px 24px;
+    border-radius: 20px; font-weight: 700; font-size: 14px; z-index: 999;
+    animation: fadeIn 0.3s ease;
+  }
+  @keyframes fadeIn { from { opacity: 0; transform: translateX(-50%) translateY(10px); } to { opacity: 1; transform: translateX(-50%) translateY(0); } }
+
+  /* File input */
+  #importFile { display: none; }
+
+  /* Responsive */
+  @media (max-width: 400px) {
+    .metric-grid { grid-template-columns: 1fr 1fr; }
+    .row, .row-3 { grid-template-columns: 1fr; }
+    .card-header { flex-direction: column; }
+    .verdict { margin-left: 0; margin-top: 8px; align-self: flex-start; }
+  }
+</style>
+</head>
+<body>
+
+<h1>产品分析报告</h1>
+<div class="subtitle">跨境产品开发 · 判断工具</div>
+
+<div class="tabs">
+  <div class="tab active" onclick="switchTab('analyze')">🔍 分析产品</div>
+  <div class="tab" onclick="switchTab('history')">📋 历史记录</div>
+</div>
+
+<!-- ====== Analyze Panel ====== -->
+<div class="panel active" id="panel-analyze">
+
+  <div class="form-group">
+    <label>产品名称</label>
+    <input id="productName" placeholder="例：Sage Green Kitchen Towels Set of 2">
+  </div>
+  <div class="form-group">
+    <label>ASIN</label>
+    <input id="asin" placeholder="B0GCFJGVFG">
+  </div>
+  <div class="row-3">
+    <div class="form-group">
+      <label>售价 <span class="unit">($)</span></label>
+      <input id="price" type="number" step="0.01" placeholder="17.99">
+    </div>
+    <div class="form-group">
+      <label>月销量</label>
+      <input id="monthlySales" type="number" placeholder="2010">
+    </div>
+    <div class="form-group">
+      <label>评论数</label>
+      <input id="reviewCount" type="number" placeholder="26">
+    </div>
+  </div>
+  <div class="row">
+    <div class="form-group">
+      <label>评分</label>
+      <input id="rating" type="number" step="0.1" min="1" max="5" placeholder="3.9">
+    </div>
+    <div class="form-group">
+      <label>1688采购成本 <span class="unit">(¥ 人民币)</span></label>
+      <input id="cost1688" type="number" step="0.01" placeholder="10.50">
+    </div>
+  </div>
+  <div class="form-group">
+    <label>差评内容 <span class="unit">(每条一行，粘贴关键词或原文)</span></label>
+    <textarea id="negativeReviews" placeholder="面料太薄，吸水性差&#10;颜色跟图片不一样&#10;太薄了不值这个价&#10;当装饰还行，吸水不行"></textarea>
+  </div>
+
+  <button class="btn btn-primary" onclick="generateReport()">⚡ 生成分析报告</button>
+
+  <!-- Report output -->
+  <div id="reportOutput" style="margin-top: 20px;"></div>
+</div>
+
+<!-- ====== History Panel ====== -->
+<div class="panel" id="panel-history">
+  <div style="display: flex; gap: 8px; margin-bottom: 16px;">
+    <button class="btn btn-outline btn-sm" style="flex:1" onclick="document.getElementById('importFile').click()">📥 导入</button>
+    <button class="btn btn-outline btn-sm" style="flex:1" onclick="exportData()">📤 导出</button>
+    <button class="btn btn-outline btn-sm" style="flex:1; border-color: var(--red); color: var(--red)" onclick="clearAll()">🗑 清空</button>
+  </div>
+  <input type="file" id="importFile" accept=".json" onchange="importData(event)">
+  <div id="productList"></div>
+</div>
+
+<script>
+// ==================== DATA LAYER ====================
+const STORAGE_KEY = 'product_analyzer_db';
+
+function loadProducts() {
+  try { return JSON.parse(localStorage.getItem(STORAGE_KEY)) || []; }
+  catch(e) { return []; }
+}
+
+function saveProducts(products) {
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(products));
+}
+
+// ==================== ANALYSIS ENGINE ====================
+function analyzeProduct(data) {
+  const price = parseFloat(data.price) || 0;
+  const sales = parseInt(data.monthlySales) || 0;
+  const reviews = parseInt(data.reviewCount) || 0;
+  const rating = parseFloat(data.rating) || 0;
+  const costCNY = parseFloat(data.cost1688) || 0;
+  const costUSD = costCNY / 7.25;
+
+  // FBA fee estimate by typical small/standard items
+  const referralFee = price * 0.15;
+  let fbaFee = 3.50;
+  if (price > 15 && price < 25) fbaFee = 4.50;
+  if (price >= 25 && price < 40) fbaFee = 5.20;
+  if (price >= 40) fbaFee = 6.00;
+
+  const landedRevenue = price - referralFee - fbaFee;
+  const shippingPerUnit = 0.45;
+  const grossProfit = landedRevenue - costUSD - shippingPerUnit;
+  const grossMargin = price > 0 ? (grossProfit / price) * 100 : 0;
+
+  const beUnits = grossProfit > 0 ? Math.ceil(costUSD * 30 / grossProfit) : Infinity;
+  const beDays = sales > 0 && beUnits !== Infinity ? Math.ceil(beUnits / (sales / 30)) : Infinity;
+
+  // Review threshold
+  let reviewLevel, reviewLabel;
+  if (reviews < 100) { reviewLevel = 'green'; reviewLabel = '低门槛 · 新品可进'; }
+  else if (reviews < 300) { reviewLevel = 'yellow'; reviewLabel = '中等门槛 · 需差异化'; }
+  else { reviewLevel = 'red'; reviewLabel = '高壁垒 · 不推荐切入'; }
+
+  // Rating assessment
+  let ratingLevel;
+  if (rating >= 4.3) ratingLevel = 'green';
+  else if (rating >= 3.8) ratingLevel = 'yellow';
+  else ratingLevel = 'red';
+
+  // Negative review analysis
+  const rawText = data.negativeReviews || '';
+  const lines = rawText.split(/[\n,，。、；;]+/).filter(l => l.trim());
+  const keywords = [
+    { word: '薄|透|太轻|单薄', cat: '面料偏薄', type: 'bad' },
+    { word: '吸水性|吸水|不吸水|水渍', cat: '吸水性差', type: 'bad' },
+    { word: '颜色|色差|掉色|褪色|染色', cat: '颜色/色差', type: 'bad' },
+    { word: '尺寸|太小|太大|长度|宽度|短|长', cat: '尺寸偏差', type: 'bad' },
+    { word: '包装|破损|碎了|压坏|变形|物流', cat: '包装/运输', type: 'bad' },
+    { word: '味道|气味|异味|臭|甲醛', cat: '异味', type: 'bad' },
+    { word: '质量|太差|劣质|粗糙|不值', cat: '质量感差', type: 'bad' },
+    { word: '电池|没电|充电|续航|发烫|短路', cat: '电池/电路', type: 'bad' },
+    { word: '安装|不好装|装不上|不稳|晃动', cat: '安装困难', type: 'bad' },
+    { word: '粘|不粘|脱落|粘性|胶水|贴不住', cat: '粘性不足', type: 'bad' },
+    { word: '漂亮|好看|精致|可爱|喜欢|满意|不错|推荐|值|好评|棒|完美|惊喜', cat: '正向评价', type: 'good' },
+    { word: '装饰|摆件|好看就行|当装饰|外观|颜值', cat: '装饰用途', type: 'neutral' },
+  ];
+
+  const categories = {};
+  let categorized = 0;
+  lines.forEach(line => {
+    let matched = false;
+    for (const kw of keywords) {
+      if (new RegExp(kw.word, 'i').test(line)) {
+        if (!categories[kw.cat]) categories[kw.cat] = { count: 0, type: kw.type, examples: [] };
+        categories[kw.cat].count++;
+        if (categories[kw.cat].examples.length < 2) categories[kw.cat].examples.push(line.trim().slice(0, 30));
+        matched = true;
+        categorized++;
+        break;
+      }
+    }
+    if (!matched) {
+      if (!categories['其他']) categories['其他'] = { count: 0, type: 'neutral', examples: [] };
+      categories['其他'].count++;
+    }
+  });
+
+  const totalLines = lines.length;
+  const badCategories = Object.entries(categories).filter(([_, v]) => v.type === 'bad').sort((a, b) => b[1].count - a[1].count);
+  const topBad = badCategories.slice(0, 3);
+  const fixableCategories = ['面料偏薄', '吸水性差', '颜色/色差', '尺寸偏差', '包装/运输', '异味', '质量感差', '安装困难', '粘性不足'];
+  const hardCategories = ['电池/电路'];
+
+  const fixableCount = badCategories.filter(([k]) => fixableCategories.includes(k)).reduce((s, [_, v]) => s + v.count, 0);
+  const hardCount = badCategories.filter(([k]) => hardCategories.includes(k)).reduce((s, [_, v]) => s + v.count, 0);
+  const totalBad = badCategories.reduce((s, [_, v]) => s + v.count, 0);
+
+  // Verdict
+  let verdict, verdictClass;
+  if (hardCount > 0 && hardCount / totalBad > 0.2) {
+    verdict = '不做'; verdictClass = 'skip';
+  } else if (reviews < 100 && rating < 4.3 && fixableCount > 0 && grossMargin > 25) {
+    verdict = '能做'; verdictClass = 'go';
+  } else if (reviews < 100 && fixableCount > 0 && grossMargin > 20) {
+    verdict = '能做'; verdictClass = 'go';
+  } else if (reviews >= 300) {
+    verdict = '不做'; verdictClass = 'skip';
+  } else if (grossMargin <= 20) {
+    verdict = '暂缓'; verdictClass = 'wait';
+  } else if (hardCount > 0) {
+    verdict = '暂缓'; verdictClass = 'wait';
+  } else {
+    verdict = '暂缓'; verdictClass = 'wait';
+  }
+
+  return {
+    price, sales, reviews, rating, costCNY, costUSD: costUSD.toFixed(2),
+    referralFee: referralFee.toFixed(2), fbaFee: fbaFee.toFixed(2),
+    landedRevenue: landedRevenue.toFixed(2), shippingPerUnit: shippingPerUnit.toFixed(2),
+    grossProfit: grossProfit.toFixed(2), grossMargin: grossMargin.toFixed(1),
+    beUnits, beDays,
+    reviewLevel, reviewLabel, ratingLevel,
+    categories, totalLines, badCategories, topBad,
+    fixableCount, hardCount, totalBad,
+    verdict, verdictClass,
+  };
+}
+
+// ==================== UI RENDERING ====================
+function generateReport() {
+  const data = {
+    productName: document.getElementById('productName').value.trim(),
+    asin: document.getElementById('asin').value.trim(),
+    price: document.getElementById('price').value,
+    monthlySales: document.getElementById('monthlySales').value,
+    reviewCount: document.getElementById('reviewCount').value,
+    rating: document.getElementById('rating').value,
+    cost1688: document.getElementById('cost1688').value,
+    negativeReviews: document.getElementById('negativeReviews').value,
+  };
+
+  if (!data.productName) { showToast('⚠️ 请至少填写产品名称'); return; }
+  if (!data.price || !data.cost1688) { showToast('⚠️ 售价和1688成本为必填项'); return; }
+
+  const r = analyzeProduct(data);
+  data.result = r;
+  data.createdAt = new Date().toISOString();
+
+  // Save
+  const products = loadProducts();
+  const existingIdx = products.findIndex(p => p.asin && p.asin === data.asin);
+  if (existingIdx >= 0) products[existingIdx] = data;
+  else products.unshift(data);
+  saveProducts(products);
+
+  renderReport(data, r);
+  document.getElementById('reportOutput').scrollIntoView({ behavior: 'smooth' });
+  showToast('✅ 报告已生成并保存');
+}
+
+function renderReport(data, r) {
+  const colorMap = { green: 'green', yellow: 'yellow', red: 'red', blue: 'blue' };
+
+  // Top bad tags
+  const badTagsHtml = r.topBad.map(([cat, info]) =>
+    `<span class="tag bad">${cat} · ${info.count}条 (${r.totalLines > 0 ? Math.round(info.count/r.totalLines*100) : 0}%)</span>`
+  ).join('');
+
+  // Verdict text
+  const verdictText = { '能做': '✅ ' + r.verdict, '暂缓': '⏸ ' + r.verdict, '不做': '🚫 ' + r.verdict };
+
+  // Reason
+  const beText = r.beUnits === Infinity ? '毛利≤0，无法回本' : `${r.beUnits}单回本 · 约${r.beDays}天（按当前月销）`;
+  const reviewText = r.reviews < 100
+    ? `评论仅${r.reviews}条，对手弱，新品可切入`
+    : r.reviews < 300
+      ? `评论${r.reviews}条，中等门槛，需差异化切入`
+      : `评论${r.reviews}条，壁垒高，不建议切入`;
+  const fixableText = r.fixableCount > 0
+    ? `差评${r.fixableCount}条属可改痛点（面料/包装/尺寸等），优化后评分有拉升空间`
+    : '差评无明确可改方向，需进一步调研';
+  const supplyText = r.costCNY
+    ? `1688采购成本约¥${r.costCNY}（≈$${r.costUSD}/件），需打样确认`
+    : '待1688询价确认采购成本';
+
+  const html = `
+    <div class="card" style="border-top: 3px solid var(--accent);">
+      <div class="card-header">
+        <div class="product-name">${escapeHtml(data.productName)}</div>
+        <span class="verdict ${r.verdictClass}">${verdictText[r.verdict] || r.verdict}</span>
+      </div>
+      <div style="font-size:12px;color:var(--muted);margin-bottom:12px;">
+        ${data.asin ? 'ASIN: ' + escapeHtml(data.asin) + ' · ' : ''}分析于 ${new Date(data.createdAt).toLocaleString('zh-CN')}
+      </div>
+
+      <!-- Metrics -->
+      <div class="metric-grid">
+        <div class="metric">
+          <div class="value ${colorMap[r.reviewLevel]}">${r.reviews}</div>
+          <div class="label">评论数 · ${r.reviewLabel}</div>
+        </div>
+        <div class="metric">
+          <div class="value ${colorMap[r.ratingLevel]}">⭐${r.rating.toFixed(1)}</div>
+          <div class="label">评分</div>
+        </div>
+        <div class="metric">
+          <div class="value blue">$${r.grossProfit}</div>
+          <div class="label">毛利/单 · ${r.grossMargin}%</div>
+        </div>
+        <div class="metric">
+          <div class="value">${r.sales}</div>
+          <div class="label">月销量</div>
+        </div>
+        <div class="metric">
+          <div class="value">$${r.price.toFixed(2)}</div>
+          <div class="label">售价</div>
+        </div>
+        <div class="metric">
+          <div class="value">≈¥${r.costCNY.toFixed(2)}</div>
+          <div class="label">1688成本</div>
+        </div>
+      </div>
+
+      <!-- Profit breakdown -->
+      <div class="section-title">💰 利润拆解</div>
+      <div style="font-size:13px;line-height:2.2;padding:8px 0;">
+        <table style="width:100%;border-collapse:collapse;color:var(--text);">
+          <tr>
+            <td style="padding:3px 0;color:var(--muted);">🇺🇸 售价（Amazon）</td>
+            <td style="text-align:right;font-weight:700;">$${r.price.toFixed(2)}</td>
+          </tr>
+          <tr>
+            <td style="padding:3px 0;color:var(--muted);">➖ 佣金（15%）</td>
+            <td style="text-align:right;color:var(--red);">−$${r.referralFee}</td>
+          </tr>
+          <tr>
+            <td style="padding:3px 0;color:var(--muted);">➖ FBA配送费</td>
+            <td style="text-align:right;color:var(--red);">−$${r.fbaFee}</td>
+          </tr>
+          <tr style="border-bottom:1px dashed var(--border);">
+            <td style="padding:3px 0;color:var(--muted);">➖ 1688采购（¥${r.costCNY.toFixed(2)} ÷ 7.25）</td>
+            <td style="text-align:right;color:var(--red);">−$${r.costUSD}</td>
+          </tr>
+          <tr>
+            <td style="padding:3px 0;color:var(--muted);">➖ 头程运费（预估）</td>
+            <td style="text-align:right;color:var(--red);">−$${r.shippingPerUnit}</td>
+          </tr>
+          <tr style="border-top:2px solid var(--accent);">
+            <td style="padding:6px 0;font-weight:800;font-size:15px;">💰 毛利 / 单</td>
+            <td style="text-align:right;font-weight:800;font-size:15px;color:var(--green);">$${r.grossProfit}</td>
+          </tr>
+          <tr>
+            <td style="padding:3px 0;color:var(--muted);">📊 毛利率</td>
+            <td style="text-align:right;font-weight:700;color:var(--accent);">${r.grossMargin}%</td>
+          </tr>
+          <tr>
+            <td style="padding:3px 0;color:var(--muted);">📦 回本点</td>
+            <td style="text-align:right;font-weight:600;">${beText}</td>
+          </tr>
+        </table>
+      </div>
+
+      <!-- Negative review analysis -->
+      ${r.totalLines > 0 ? `
+      <div class="section-title">差评分析</div>
+      <div class="tag-list">${badTagsHtml || '<span class="tag neutral">无明确差评数据</span>'}</div>
+      <div style="font-size:12px;color:var(--muted);">共${r.totalLines}条差评 · ${r.fixableCount}条可改善 · ${r.hardCount}条硬伤</div>
+      ` : ''}
+
+      <!-- Reason -->
+      <div class="section-title">判断理由</div>
+      <div class="reason-box">
+        <ol style="margin:0;padding-left:16px;">
+          <li>${reviewText}</li>
+          <li>${fixableText}</li>
+          <li>售价$${r.price.toFixed(2)}，毛利率${r.grossMargin}%，空间够</li>
+          <li>${supplyText}</li>
+          ${r.hardCount > 0 ? '<li style="color:var(--red);">⚠ 含电子/模具等硬伤需求，新手谨慎</li>' : ''}
+        </ol>
+      </div>
+
+      <button class="btn btn-outline btn-sm" style="margin-top:12px;" onclick="deleteProduct('${data.asin || data.productName}')">🗑 删除此报告</button>
+    </div>
+  `;
+
+  document.getElementById('reportOutput').innerHTML = html;
+}
+
+// ==================== HISTORY PANEL ====================
+function renderProductList() {
+  const products = loadProducts();
+  const container = document.getElementById('productList');
+
+  if (products.length === 0) {
+    container.innerHTML = '<div class="empty-state">📭 暂无分析记录<br><span style="font-size:12px;">去「分析产品」页添加你的第一个产品</span></div>';
+    return;
+  }
+
+  container.innerHTML = products.map((p, i) => {
+    const r = p.result || {};
+    const vLabel = r.verdict === '能做' ? '✅ 能做' : r.verdict === '不做' ? '🚫 不做' : '⏸ 暂缓';
+    const date = p.createdAt ? new Date(p.createdAt).toLocaleDateString('zh-CN') : '未知';
+    return `
+      <div class="product-item" onclick="viewProduct(${i})">
+        <div class="top">
+          <span class="name">${escapeHtml(p.productName || '未命名')}</span>
+          <span style="font-size:12px;color:var(--muted);">${date}</span>
+        </div>
+        <div class="meta">
+          ${p.asin ? 'ASIN: ' + escapeHtml(p.asin) + ' · ' : ''}
+          销量${p.monthlySales || '?'} ·
+          评论${p.reviewCount || '?'} ·
+          ⭐${p.rating || '?'} ·
+          ${p.price ? '$' + p.price : ''} ·
+          ${vLabel}
+        </div>
+      </div>
+    `;
+  }).join('');
+}
+
+function viewProduct(index) {
+  const products = loadProducts();
+  const p = products[index];
+  if (!p) return;
+
+  // Fill form
+  document.getElementById('productName').value = p.productName || '';
+  document.getElementById('asin').value = p.asin || '';
+  document.getElementById('price').value = p.price || '';
+  document.getElementById('monthlySales').value = p.monthlySales || '';
+  document.getElementById('reviewCount').value = p.reviewCount || '';
+  document.getElementById('rating').value = p.rating || '';
+  document.getElementById('cost1688').value = p.cost1688 || '';
+  document.getElementById('negativeReviews').value = p.negativeReviews || '';
+
+  switchTab('analyze');
+  if (p.result) renderReport(p, p.result);
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+function deleteProduct(id) {
+  if (!confirm('确定删除这个产品的分析报告吗？')) return;
+  let products = loadProducts();
+  products = products.filter(p => (p.asin || p.productName) !== id);
+  saveProducts(products);
+  document.getElementById('reportOutput').innerHTML = '';
+  showToast('已删除');
+}
+
+function clearAll() {
+  if (!confirm('确定删除所有分析记录吗？此操作不可恢复。')) return;
+  localStorage.removeItem(STORAGE_KEY);
+  document.getElementById('reportOutput').innerHTML = '';
+  renderProductList();
+  showToast('已清空全部记录');
+}
+
+function exportData() {
+  const products = loadProducts();
+  if (products.length === 0) { showToast('⚠️ 没有数据可导出'); return; }
+  const blob = new Blob([JSON.stringify(products, null, 2)], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = '产品分析数据_' + new Date().toISOString().slice(0,10) + '.json';
+  a.click();
+  URL.revokeObjectURL(url);
+  showToast('📤 导出成功');
+}
+
+function importData(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    try {
+      const data = JSON.parse(e.target.result);
+      if (!Array.isArray(data)) throw new Error('格式错误');
+      const existing = loadProducts();
+      const merged = [...data, ...existing];
+      // dedup by asin
+      const seen = new Set();
+      const deduped = merged.filter(p => {
+        const key = p.asin || p.productName || '';
+        if (seen.has(key)) return false;
+        seen.add(key);
+        return true;
+      });
+      saveProducts(deduped);
+      renderProductList();
+      showToast('📥 导入成功 · ' + deduped.length + '条记录');
+    } catch(err) {
+      showToast('⚠️ 文件格式错误');
+    }
+  };
+  reader.readAsText(file);
+  event.target.value = '';
+}
+
+// ==================== UTILS ====================
+function switchTab(name) {
+  document.querySelectorAll('.tab').forEach((t, i) => {
+    t.classList.toggle('active', (name === 'analyze' && i === 0) || (name === 'history' && i === 1));
+  });
+  document.getElementById('panel-analyze').classList.toggle('active', name === 'analyze');
+  document.getElementById('panel-history').classList.toggle('active', name === 'history');
+  if (name === 'history') renderProductList();
+}
+
+function showToast(msg) {
+  const existing = document.querySelector('.toast');
+  if (existing) existing.remove();
+  const t = document.createElement('div');
+  t.className = 'toast';
+  t.textContent = msg;
+  document.body.appendChild(t);
+  setTimeout(() => t.remove(), 2000);
+}
+
+function escapeHtml(str) {
+  if (!str) return '';
+  const div = document.createElement('div');
+  div.textContent = str;
+  return div.innerHTML;
+}
+
+// ==================== INIT ====================
+(function init() {
+  // Pre-fill demo data
+  document.getElementById('productName').value = 'Sage Green Kitchen Towels Set of 2（鼠尾草绿厨房毛巾 2件装）';
+  document.getElementById('asin').value = 'B0GCFJGVFG';
+  document.getElementById('price').value = '17.99';
+  document.getElementById('monthlySales').value = '2010';
+  document.getElementById('reviewCount').value = '26';
+  document.getElementById('rating').value = '3.9';
+  document.getElementById('cost1688').value = '10.50';
+  document.getElementById('negativeReviews').value = '面料太薄，吸水性差\n颜色跟图片不一样，实物偏暗\n太薄了不值这个价\n当装饰还行，吸水真的不行\n好看是好看，质量一般\n有点薄，当抹布都不吸水\n颜色好看但布料太透了\n吸水性不如普通洗碗巾';
+})();
+</script>
+
+</body>
+</html>
