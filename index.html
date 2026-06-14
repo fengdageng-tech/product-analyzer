@@ -136,6 +136,8 @@
   }
   .product-item .body { flex: 1; min-width: 0; }
   .list-thumb { width: 48px; height: 48px; border-radius: 6px; object-fit: cover; flex-shrink: 0; border: 1px solid var(--border); background: rgba(0,0,0,0.3); }
+  .item-del { flex-shrink: 0; width: 28px; height: 28px; border-radius: 50%; border: 1px solid var(--border); background: transparent; color: var(--muted); font-size: 14px; cursor: pointer; display: flex; align-items: center; justify-content: center; line-height: 1; padding: 0; }
+  .item-del:hover { border-color: var(--red); color: var(--red); background: rgba(248,113,113,0.1); }
   .product-item:active { border-color: var(--accent); }
   .product-item .top { display: flex; justify-content: space-between; align-items: center; }
   .product-item .name { font-weight: 700; font-size: 15px; flex: 1; }
@@ -777,6 +779,7 @@ function renderProductList() {
           ${vLabel}
         </div>
         </div>
+        <button class="item-del" onclick="event.stopPropagation();deleteSingle(${i})" title="删除">🗑</button>
       </div>
     `;
   }).join('');
@@ -825,6 +828,18 @@ function deleteProduct(id) {
   products = products.filter(p => (p.asin || p.productName) !== id);
   saveProducts(products);
   document.getElementById('reportOutput').innerHTML = '';
+  showToast('已删除');
+}
+
+function deleteSingle(index) {
+  const products = loadProducts();
+  const p = products[index];
+  if (!p) return;
+  if (!confirm(`确定删除「${p.productName || '未命名'}」吗？`)) return;
+  products.splice(index, 1);
+  saveProducts(products);
+  renderProductList();
+  renderStats();
   showToast('已删除');
 }
 
