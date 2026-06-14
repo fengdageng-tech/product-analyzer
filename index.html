@@ -194,6 +194,21 @@
   .seg.wait { background: var(--yellow); }
   .seg.skip { background: var(--red); }
 
+  /* GitHub Sync */
+  .sync-section { background: var(--card); border: 1px solid var(--border); border-radius: 10px; padding: 14px; margin-bottom: 14px; }
+  .sync-section .sync-title { font-size: 13px; font-weight: 700; color: var(--accent); margin-bottom: 8px; }
+  .sync-row { display: flex; gap: 8px; margin-bottom: 8px; }
+  .sync-row input { flex: 1; font-size: 12px; padding: 8px 10px; }
+  .btn-sync { padding: 8px 14px; font-size: 12px; border-radius: 8px; cursor: pointer; font-weight: 600; font-family: inherit; white-space: nowrap; flex-shrink: 0; border: 1px solid var(--border); background: transparent; color: var(--text); transition: all 0.2s; }
+  .btn-sync.up { border-color: var(--accent); color: var(--accent); }
+  .btn-sync.down { border-color: var(--green); color: var(--green); }
+  .btn-sync:active { transform: scale(0.97); opacity: 0.8; }
+  .sync-status { font-size: 11px; margin-top: 4px; }
+  .sync-status.ok { color: var(--green); }
+  .sync-status.err { color: var(--red); }
+  .auto-sync-label { display: flex; align-items: center; gap: 8px; font-size: 12px; color: var(--muted); cursor: pointer; user-select: none; }
+  .auto-sync-label input[type=checkbox] { width: auto; accent-color: var(--accent); }
+
   /* Override */
   .override-bar { display: flex; gap: 6px; margin-top: 8px; flex-wrap: wrap; }
   .override-bar .btn-o { padding: 5px 12px; font-size: 11px; border-radius: 16px; cursor: pointer; border: 1px solid var(--border); background: transparent; color: var(--muted); font-weight: 600; transition: all 0.15s; font-family: inherit; }
@@ -330,6 +345,24 @@
 <!-- ====== History Panel ====== -->
 <div class="panel" id="panel-history">
   <div id="statsPanel"></div>
+  <div class="sync-section">
+    <div class="sync-title">☁ GitHub 云同步</div>
+    <div id="syncSetup" style="display:none;">
+      <div class="sync-row">
+        <input id="githubToken" type="password" placeholder="粘贴 GitHub Token">
+        <button class="btn-sync" onclick="saveToken()">💾 保存</button>
+      </div>
+      <div style="font-size:11px;color:var(--muted);margin-bottom:8px;">Token 仅存在本设备，不上传云端</div>
+    </div>
+    <div class="sync-row">
+      <button class="btn-sync up" id="btnUpload" onclick="uploadToGithub()">☁ 上传到云端</button>
+      <button class="btn-sync down" id="btnDownload" onclick="downloadFromGithub()">⬇ 从云端下载</button>
+    </div>
+    <label class="auto-sync-label">
+      <input type="checkbox" id="autoSyncCheck" onchange="toggleAutoSync()"> 每次分析后自动上传到云端
+    </label>
+    <div class="sync-status" id="syncStatus"></div>
+  </div>
   <div style="display: flex; gap: 8px; margin-bottom: 16px;">
     <button class="btn btn-outline btn-sm" style="flex:1" onclick="document.getElementById('importFile').click()">📥 导入</button>
     <button class="btn btn-outline btn-sm" style="flex:1" onclick="exportData()">📤 导出</button>
@@ -549,6 +582,11 @@ function generateReport() {
   renderReport(data, r);
   document.getElementById('reportOutput').scrollIntoView({ behavior: 'smooth' });
   showToast('✅ 报告已生成并保存');
+
+  // Auto-sync to GitHub if enabled
+  if (isAutoSync() && getToken()) {
+    uploadToGithub().catch(() => {});
+  }
 }
 
 function renderReport(data, r) {
@@ -1080,6 +1118,127 @@ function renderStats() {
   `;
 }
 
+// ==================== GITHUB SYNC ====================
+const GITHUB_API = 'https://api.github.com/repos/fengdageng-tech/product-analyzer/contents/data.json';
+const TOKEN_KEY = 'github_sync_token';
+const AUTO_SYNC_KEY = 'github_auto_sync';
+
+function getToken() {
+  return localStorage.getItem(TOKEN_KEY) || '';
+}
+
+function saveToken() {
+  const token = document.getElementById('githubToken').value.trim();
+  if (!token) { setSyncStatus('请输入 Token', 'err'); return; }
+  localStorage.setItem(TOKEN_KEY, token);
+  document.getElementById('githubToken').value = '';
+  setSyncStatus('Token 已保存 ✅', 'ok');
+  initSyncUI();
+}
+
+function toggleAutoSync() {
+  const enabled = document.getElementById('autoSyncCheck').checked;
+  if (enabled) {
+    localStorage.setItem(AUTO_SYNC_KEY, '1');
+    setSyncStatus('自动同步已开启，每次分析后自动上传', 'ok');
+  } else {
+    localStorage.removeItem(AUTO_SYNC_KEY);
+    setSyncStatus('自动同步已关闭', '');
+  }
+}
+
+function isAutoSync() {
+  return localStorage.getItem(AUTO_SYNC_KEY) === '1';
+}
+
+function setSyncStatus(msg, cls) {
+  const el = document.getElementById('syncStatus');
+  if (el) { el.textContent = msg; el.className = 'sync-status ' + (cls || ''); }
+}
+
+async function uploadToGithub() {
+  const token = getToken();
+  if (!token) { showTokenPrompt(); return; }
+  setSyncStatus('⏳ 上传中...', '');
+  try {
+    const products = loadProducts();
+    const content = btoa(unescape(encodeURIComponent(JSON.stringify(products, null, 2))));
+    // Get current file sha
+    let sha = null;
+    try {
+      const getRes = await fetch(GITHUB_API, { headers: { Authorization: 'Bearer ' + token } });
+      if (getRes.ok) { const info = await getRes.json(); sha = info.sha; }
+    } catch(e) {}
+    // Put file
+    const body = { message: '☁ 云同步', content };
+    if (sha) body.sha = sha;
+    const res = await fetch(GITHUB_API, {
+      method: 'PUT',
+      headers: { Authorization: 'Bearer ' + token, 'Content-Type': 'application/json' },
+      body: JSON.stringify(body)
+    });
+    if (res.ok) {
+      setSyncStatus('✅ 已上传云端 · ' + new Date().toLocaleTimeString('zh-CN'), 'ok');
+      showToast('☁ 已同步到云端');
+    } else if (res.status === 401) {
+      setSyncStatus('Token 无效，请重新设置', 'err');
+      showTokenPrompt();
+    } else {
+      const err = await res.json();
+      setSyncStatus('上传失败: ' + (err.message || res.status), 'err');
+    }
+  } catch(e) {
+    setSyncStatus('网络错误，请稍后重试', 'err');
+  }
+}
+
+async function downloadFromGithub() {
+  const token = getToken();
+  if (!token) { showTokenPrompt(); return; }
+  setSyncStatus('⏳ 下载中...', '');
+  try {
+    const res = await fetch(GITHUB_API, { headers: { Authorization: 'Bearer ' + token } });
+    if (!res.ok) {
+      if (res.status === 401) { setSyncStatus('Token 无效', 'err'); showTokenPrompt(); }
+      else if (res.status === 404) { setSyncStatus('云端暂无数据，请先上传', 'err'); }
+      else { setSyncStatus('下载失败: ' + res.status, 'err'); }
+      return;
+    }
+    const info = await res.json();
+    const content = decodeURIComponent(escape(atob(info.content.replace(/\s/g, ''))));
+    const remote = JSON.parse(content);
+    if (!Array.isArray(remote)) throw new Error('格式错误');
+    // Merge: remote data wins for same asin
+    const local = loadProducts();
+    const merged = [...remote];
+    const seen = new Set(merged.map(p => p.asin || p.productName || ''));
+    local.forEach(p => {
+      const key = p.asin || p.productName || '';
+      if (!seen.has(key)) { merged.push(p); seen.add(key); }
+    });
+    saveProducts(merged);
+    renderProductList();
+    renderStats();
+    setSyncStatus('✅ 已从云端下载 · ' + remote.length + '条记录', 'ok');
+    showToast('⬇ 已从云端同步 ' + remote.length + '条');
+  } catch(e) {
+    setSyncStatus('下载失败，数据格式错误', 'err');
+  }
+}
+
+function showTokenPrompt() {
+  const setup = document.getElementById('syncSetup');
+  if (setup) setup.style.display = 'block';
+  document.getElementById('githubToken').focus();
+}
+
+function initSyncUI() {
+  const hasToken = !!getToken();
+  document.getElementById('syncSetup').style.display = hasToken ? 'none' : 'block';
+  document.getElementById('autoSyncCheck').checked = isAutoSync();
+  document.getElementById('githubToken').value = '';
+}
+
 // ==================== UTILS ====================
 function switchTab(name) {
   document.querySelectorAll('.tab').forEach((t, i) => {
@@ -1087,7 +1246,7 @@ function switchTab(name) {
   });
   document.getElementById('panel-analyze').classList.toggle('active', name === 'analyze');
   document.getElementById('panel-history').classList.toggle('active', name === 'history');
-  if (name === 'history') { renderStats(); renderProductList(); }
+  if (name === 'history') { renderStats(); renderProductList(); initSyncUI(); }
 }
 
 function showToast(msg) {
