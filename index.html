@@ -534,6 +534,7 @@ function generateReport() {
   const products = loadProducts();
   const existingIdx = products.findIndex(p => p.asin && p.asin === data.asin);
   if (existingIdx >= 0) {
+    data.imageData = data.imageData || products[existingIdx].imageData || null;
     data.manualVerdict = data.manualVerdict || products[existingIdx].manualVerdict;
     data.manualNote = data.manualNote || products[existingIdx].manualNote || '';
     products[existingIdx] = data;
@@ -804,11 +805,11 @@ function viewProduct(index) {
     document.getElementById('adValue').style.display = 'none';
   }
 
-  // Restore image
+  // Restore image (set input FIRST to avoid oninput triggering clearImage)
   if (p.imageData) {
+    document.getElementById('imageUrl').value = p.imageData.type === 'url' ? p.imageData.value : '';
     currentImageData = p.imageData;
     showImagePreview(p.imageData.value);
-    document.getElementById('imageUrl').value = p.imageData.type === 'url' ? p.imageData.value : '';
   } else {
     clearImage();
   }
