@@ -198,6 +198,16 @@
   .override-note input { font-size: 13px; padding: 8px 12px; }
   .overridden-mark { font-size: 11px; color: var(--accent); margin-left: 4px; }
 
+  /* Image upload */
+  .image-upload-row { display: flex; gap: 8px; }
+  .image-upload-row input { flex: 1; }
+  .image-upload-row .btn-sm { white-space: nowrap; flex-shrink: 0; padding: 10px 16px; font-size: 13px; }
+  .image-preview-wrap { margin-top: 8px; display: none; position: relative; }
+  .image-preview-wrap.show { display: inline-block; }
+  .image-preview-wrap img { width: 100%; max-width: 300px; border-radius: 8px; border: 1px solid var(--border); display: block; }
+  .image-preview-wrap .clear-img { position: absolute; top: 4px; right: 4px; width: 24px; height: 24px; border-radius: 50%; background: var(--red); color: #fff; border: none; cursor: pointer; font-size: 14px; line-height: 1; }
+  .card-img { width: 100%; max-height: 260px; object-fit: contain; border-radius: 8px; margin-bottom: 14px; background: rgba(0,0,0,0.3); }
+
   /* Export btn */
   .export-row { display: flex; gap: 8px; margin-top: 12px; }
   .btn-export { flex: 1; padding: 8px; font-size: 12px; border-radius: 8px; background: transparent; border: 1px solid var(--accent); color: var(--accent); cursor: pointer; font-weight: 600; font-family: inherit; }
@@ -243,6 +253,18 @@
   <div class="form-group">
     <label>ASIN</label>
     <input id="asin" placeholder="B0GCFJGVFG">
+  </div>
+  <div class="form-group">
+    <label>产品主图 <span class="unit">(选填)</span></label>
+    <div class="image-upload-row">
+      <input id="imageUrl" placeholder="粘贴图片链接，或点击右侧上传" oninput="previewImageUrl()">
+      <input type="file" id="imageFile" accept="image/*" onchange="handleImageUpload(event)" style="display:none;">
+      <button class="btn btn-sm" onclick="document.getElementById('imageFile').click()" type="button">📁 上传</button>
+    </div>
+    <div class="image-preview-wrap" id="imagePreview">
+      <img id="imagePreviewImg" alt="主图预览">
+      <button class="clear-img" onclick="clearImage()" type="button">✕</button>
+    </div>
   </div>
   <div class="row-3">
     <div class="form-group">
@@ -500,6 +522,7 @@ function generateReport() {
 
   data.result = r;
   data.competitors = competitors;
+  data.imageData = currentImageData || data.imageData || null;
   data.manualVerdict = data.manualVerdict || null;
   data.manualNote = data.manualNote || '';
   data.createdAt = new Date().toISOString();
@@ -609,6 +632,8 @@ function renderReport(data, r) {
       <div style="font-size:12px;color:var(--muted);margin-bottom:12px;">
         ${data.asin ? 'ASIN: ' + escapeHtml(data.asin) + ' · ' : ''}分析于 ${new Date(data.createdAt).toLocaleString('zh-CN')}
       </div>
+
+      ${data.imageData ? `<img class="card-img" src="${data.imageData.value.replace(/"/g, '&quot;')}" alt="产品主图" onerror="this.style.display='none'">` : ''}
 
       <!-- Metrics -->
       <div class="metric-grid">
@@ -770,6 +795,15 @@ function viewProduct(index) {
     document.getElementById('adValue').style.display = 'none';
   }
 
+  // Restore image
+  if (p.imageData) {
+    currentImageData = p.imageData;
+    showImagePreview(p.imageData.value);
+    document.getElementById('imageUrl').value = p.imageData.type === 'url' ? p.imageData.value : '';
+  } else {
+    clearImage();
+  }
+
   switchTab('analyze');
   if (p.result) renderReport(p, p.result);
   window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -835,6 +869,57 @@ function importData(event) {
 }
 
 // ==================== NEW FEATURES ====================
+
+// Image upload
+let currentImageData = null; // { type: 'url'|'base64', value: string }
+
+function handleImageUpload(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    const img = new Image();
+    img.onload = function() {
+      const canvas = document.createElement('canvas');
+      const maxW = 400;
+      let w = img.width, h = img.height;
+      if (w > maxW) { h = h * maxW / w; w = maxW; }
+      canvas.width = w;
+      canvas.height = h;
+      const ctx = canvas.getContext('2d');
+      ctx.drawImage(img, 0, 0, w, h);
+      const dataUrl = canvas.toDataURL('image/jpeg', 0.7);
+      currentImageData = { type: 'base64', value: dataUrl };
+      document.getElementById('imageUrl').value = '';
+      showImagePreview(dataUrl);
+    };
+    img.src = e.target.result;
+  };
+  reader.readAsDataURL(file);
+}
+
+function previewImageUrl() {
+  const url = document.getElementById('imageUrl').value.trim();
+  if (url) {
+    currentImageData = { type: 'url', value: url };
+    showImagePreview(url);
+  } else {
+    clearImage();
+  }
+}
+
+function showImagePreview(src) {
+  document.getElementById('imagePreview').classList.add('show');
+  document.getElementById('imagePreviewImg').src = src;
+}
+
+function clearImage() {
+  currentImageData = null;
+  document.getElementById('imagePreview').classList.remove('show');
+  document.getElementById('imagePreviewImg').src = '';
+  document.getElementById('imageUrl').value = '';
+  document.getElementById('imageFile').value = '';
+}
 
 // Ad cost input toggle
 function toggleAdInput() {
