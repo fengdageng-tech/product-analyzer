@@ -152,12 +152,74 @@
   /* File input */
   #importFile { display: none; }
 
+  /* Ad row */
+  .ad-row { display: flex; gap: 8px; align-items: flex-end; }
+  .ad-row select { width: 130px; flex-shrink: 0; padding: 10px 8px; border-radius: 8px; border: 1px solid var(--border); background: var(--input-bg); color: var(--text); font-size: 14px; font-family: inherit; }
+  .ad-row input { flex: 1; }
+  .ad-hint { font-size: 11px; color: var(--muted); margin-top: 4px; }
+
+  /* Competitor section */
+  .collapsible { margin-bottom: 14px; }
+  .collapsible-trigger { display: flex; align-items: center; gap: 6px; font-size: 13px; font-weight: 600; color: var(--accent); cursor: pointer; padding: 10px 0; user-select: none; }
+  .collapsible-trigger .arrow { transition: transform 0.2s; font-size: 10px; }
+  .collapsible.open .arrow { transform: rotate(90deg); }
+  .collapsible-body { display: none; }
+  .collapsible.open .collapsible-body { display: block; }
+  .competitor-card { background: var(--input-bg); border: 1px solid var(--border); border-radius: 10px; padding: 14px; margin-bottom: 10px; position: relative; }
+  .competitor-card .remove-btn { position: absolute; top: 8px; right: 10px; width: 24px; height: 24px; border-radius: 50%; border: 1px solid var(--red); background: transparent; color: var(--red); font-size: 14px; cursor: pointer; line-height: 1; }
+  .add-comp-btn { font-size: 12px; color: var(--accent); background: transparent; border: 1px dashed var(--border); padding: 8px 14px; border-radius: 8px; cursor: pointer; width: 100%; font-family: inherit; }
+
+  /* Comparison table */
+  .comparison-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; margin: 12px 0; }
+  .comparison-table { width: 100%; border-collapse: collapse; font-size: 12px; min-width: 500px; }
+  .comparison-table th { background: rgba(56,189,248,0.08); color: var(--accent); padding: 8px 6px; text-align: center; font-size: 11px; white-space: nowrap; }
+  .comparison-table td { padding: 8px 6px; text-align: center; border-bottom: 1px solid var(--border); }
+  .comparison-table .highlight { color: var(--green); font-weight: 700; }
+  .comparison-table .warn { color: var(--yellow); }
+
+  /* Stats */
+  .stats-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 16px; }
+  .stat-card { background: var(--card); border: 1px solid var(--border); border-radius: 10px; padding: 14px; text-align: center; }
+  .stat-card .stat-value { font-size: 22px; font-weight: 800; }
+  .stat-card .stat-label { font-size: 11px; color: var(--muted); margin-top: 2px; }
+  .stat-bar { display: flex; height: 6px; border-radius: 3px; overflow: hidden; margin-top: 8px; }
+  .stat-bar .seg { height: 100%; }
+  .seg.go { background: var(--green); }
+  .seg.wait { background: var(--yellow); }
+  .seg.skip { background: var(--red); }
+
+  /* Override */
+  .override-bar { display: flex; gap: 6px; margin-top: 8px; flex-wrap: wrap; }
+  .override-bar .btn-o { padding: 5px 12px; font-size: 11px; border-radius: 16px; cursor: pointer; border: 1px solid var(--border); background: transparent; color: var(--muted); font-weight: 600; transition: all 0.15s; font-family: inherit; }
+  .override-bar .btn-o.go-active { background: rgba(74,222,128,0.15); color: var(--green); border-color: var(--green); }
+  .override-bar .btn-o.wait-active { background: rgba(251,191,36,0.15); color: var(--yellow); border-color: var(--yellow); }
+  .override-bar .btn-o.skip-active { background: rgba(248,113,113,0.15); color: var(--red); border-color: var(--red); }
+  .override-note { margin-top: 8px; }
+  .override-note input { font-size: 13px; padding: 8px 12px; }
+  .overridden-mark { font-size: 11px; color: var(--accent); margin-left: 4px; }
+
+  /* Export btn */
+  .export-row { display: flex; gap: 8px; margin-top: 12px; }
+  .btn-export { flex: 1; padding: 8px; font-size: 12px; border-radius: 8px; background: transparent; border: 1px solid var(--accent); color: var(--accent); cursor: pointer; font-weight: 600; font-family: inherit; }
+  .btn-export:active { background: rgba(56,189,248,0.1); }
+
+  /* Print */
+  @media print {
+    body { background: #fff; color: #000; max-width: 100%; padding: 0; }
+    .tabs, .btn, .btn-export, .btn-outline, .btn-sm, .btn-danger, .export-row, .override-bar, .override-note, .collapsible-trigger, .add-comp-btn, .remove-btn, #reportOutput { margin: 0; }
+    .card { border: 1px solid #ddd; break-inside: avoid; }
+    .btn, .btn-export, .btn-outline, .btn-sm, .btn-danger, .export-row, .override-bar, .override-note { display: none !important; }
+  }
+
   /* Responsive */
   @media (max-width: 400px) {
     .metric-grid { grid-template-columns: 1fr 1fr; }
     .row, .row-3 { grid-template-columns: 1fr; }
     .card-header { flex-direction: column; }
     .verdict { margin-left: 0; margin-top: 8px; align-self: flex-start; }
+    .stats-grid { grid-template-columns: 1fr 1fr; }
+    .ad-row { flex-direction: column; align-items: stretch; }
+    .ad-row select { width: 100%; }
   }
 </style>
 </head>
@@ -207,8 +269,28 @@
     </div>
   </div>
   <div class="form-group">
+    <label>广告成本 <span class="unit">(选填)</span></label>
+    <div class="ad-row">
+      <select id="adType" onchange="toggleAdInput()">
+        <option value="">不投广告</option>
+        <option value="acos">ACoS (%)</option>
+        <option value="cpc">CPC ($)</option>
+      </select>
+      <input id="adValue" type="number" step="0.1" placeholder="15" style="display:none">
+    </div>
+    <div class="ad-hint" id="adHint"></div>
+  </div>
+  <div class="form-group">
     <label>差评内容 <span class="unit">(每条一行，粘贴关键词或原文)</span></label>
     <textarea id="negativeReviews" placeholder="面料太薄，吸水性差&#10;颜色跟图片不一样&#10;太薄了不值这个价&#10;当装饰还行，吸水不行"></textarea>
+  </div>
+
+  <!-- Competitor comparison -->
+  <div class="collapsible" id="competitorSection">
+    <div class="collapsible-trigger" onclick="toggleCompetitor()">
+      <span class="arrow">▶</span> 添加竞品对比 <span style="font-size:11px;color:var(--muted)">(最多2个)</span>
+    </div>
+    <div class="collapsible-body" id="competitorBody"></div>
   </div>
 
   <button class="btn btn-primary" onclick="generateReport()">⚡ 生成分析报告</button>
@@ -219,6 +301,7 @@
 
 <!-- ====== History Panel ====== -->
 <div class="panel" id="panel-history">
+  <div id="statsPanel"></div>
   <div style="display: flex; gap: 8px; margin-bottom: 16px;">
     <button class="btn btn-outline btn-sm" style="flex:1" onclick="document.getElementById('importFile').click()">📥 导入</button>
     <button class="btn btn-outline btn-sm" style="flex:1" onclick="exportData()">📤 导出</button>
@@ -265,6 +348,15 @@ function analyzeProduct(data) {
   const beUnits = grossProfit > 0 ? Math.ceil(costUSD * 30 / grossProfit) : Infinity;
   const beDays = sales > 0 && beUnits !== Infinity ? Math.ceil(beUnits / (sales / 30)) : Infinity;
 
+  // Ad cost
+  const adCostType = data.adCostType || null;
+  const adCostValue = parseFloat(data.adCostValue) || 0;
+  let adSpend = 0;
+  if (adCostType === 'acos' && adCostValue > 0) { adSpend = price * (adCostValue / 100); }
+  if (adCostType === 'cpc' && adCostValue > 0) { adSpend = adCostValue; }
+  const netProfit = grossProfit - adSpend;
+  const netMargin = price > 0 ? (netProfit / price) * 100 : 0;
+
   // Review threshold
   let reviewLevel, reviewLabel;
   if (reviews < 100) { reviewLevel = 'green'; reviewLabel = '低门槛 · 新品可进'; }
@@ -284,14 +376,23 @@ function analyzeProduct(data) {
     { word: '薄|透|太轻|单薄', cat: '面料偏薄', type: 'bad' },
     { word: '吸水性|吸水|不吸水|水渍', cat: '吸水性差', type: 'bad' },
     { word: '颜色|色差|掉色|褪色|染色', cat: '颜色/色差', type: 'bad' },
-    { word: '尺寸|太小|太大|长度|宽度|短|长', cat: '尺寸偏差', type: 'bad' },
+    { word: '尺寸|太小|太大|长度|宽度|短|长|偏小|偏大', cat: '尺寸偏差', type: 'bad' },
     { word: '包装|破损|碎了|压坏|变形|物流', cat: '包装/运输', type: 'bad' },
     { word: '味道|气味|异味|臭|甲醛', cat: '异味', type: 'bad' },
     { word: '质量|太差|劣质|粗糙|不值', cat: '质量感差', type: 'bad' },
     { word: '电池|没电|充电|续航|发烫|短路', cat: '电池/电路', type: 'bad' },
     { word: '安装|不好装|装不上|不稳|晃动', cat: '安装困难', type: 'bad' },
     { word: '粘|不粘|脱落|粘性|胶水|贴不住', cat: '粘性不足', type: 'bad' },
-    { word: '漂亮|好看|精致|可爱|喜欢|满意|不错|推荐|值|好评|棒|完美|惊喜', cat: '正向评价', type: 'good' },
+    { word: '掉毛|起球|缩水|变形|起皱|掉色|褪色', cat: '面料耐久性', type: 'bad' },
+    { word: '拉链|扣子|缝线|开线|线头|拉链坏', cat: '做工细节', type: 'bad' },
+    { word: '噪音|太吵|声音大|吵|静音|嗡嗡', cat: '噪音问题', type: 'bad' },
+    { word: '生锈|掉漆|氧化|变色|发黄|褪色', cat: '材质老化', type: 'bad' },
+    { word: '划痕|瑕疵|二手|用过|翻新|拆过', cat: '品控/翻新', type: 'bad' },
+    { word: '说明书|看不懂|没有英文|英文说明|不会用|操作', cat: '使用说明', type: 'bad' },
+    { word: '过敏|起疹|皮肤|痒|红肿|刺激', cat: '过敏反应', type: 'bad' },
+    { word: '售后|退货|退款|客服|不理人|联系不上', cat: '售后体验', type: 'bad' },
+    { word: '清洗|洗|不耐洗|洗衣机|手洗', cat: '清洗便利性', type: 'neutral' },
+    { word: '漂亮|好看|精致|可爱|喜欢|满意|不错|推荐|值|好评|棒|完美|惊喜|很好|完美', cat: '正向评价', type: 'good' },
     { word: '装饰|摆件|好看就行|当装饰|外观|颜值', cat: '装饰用途', type: 'neutral' },
   ];
 
@@ -326,17 +427,18 @@ function analyzeProduct(data) {
   const totalBad = badCategories.reduce((s, [_, v]) => s + v.count, 0);
 
   // Verdict
+  const useMargin = adSpend > 0 ? netMargin : grossMargin;
   let verdict, verdictClass;
   if (hardCount > 0 && hardCount / totalBad > 0.2) {
     verdict = '不做'; verdictClass = 'skip';
-  } else if (reviews < 100 && rating < 4.3 && fixableCount > 0 && grossMargin > 25) {
+  } else if (useMargin <= 15) {
+    verdict = '暂缓'; verdictClass = 'wait';
+  } else if (reviews < 100 && fixableCount > 0 && useMargin > 25) {
     verdict = '能做'; verdictClass = 'go';
-  } else if (reviews < 100 && fixableCount > 0 && grossMargin > 20) {
+  } else if (reviews < 100 && fixableCount > 0 && useMargin > 20) {
     verdict = '能做'; verdictClass = 'go';
   } else if (reviews >= 300) {
     verdict = '不做'; verdictClass = 'skip';
-  } else if (grossMargin <= 20) {
-    verdict = '暂缓'; verdictClass = 'wait';
   } else if (hardCount > 0) {
     verdict = '暂缓'; verdictClass = 'wait';
   } else {
@@ -348,6 +450,8 @@ function analyzeProduct(data) {
     referralFee: referralFee.toFixed(2), fbaFee: fbaFee.toFixed(2),
     landedRevenue: landedRevenue.toFixed(2), shippingPerUnit: shippingPerUnit.toFixed(2),
     grossProfit: grossProfit.toFixed(2), grossMargin: grossMargin.toFixed(1),
+    adCostType, adCostValue, adSpend: adSpend.toFixed(2),
+    netProfit: netProfit.toFixed(2), netMargin: netMargin.toFixed(1),
     beUnits, beDays,
     reviewLevel, reviewLabel, ratingLevel,
     categories, totalLines, badCategories, topBad,
@@ -367,20 +471,49 @@ function generateReport() {
     rating: document.getElementById('rating').value,
     cost1688: document.getElementById('cost1688').value,
     negativeReviews: document.getElementById('negativeReviews').value,
+    adCostType: document.getElementById('adType').value || null,
+    adCostValue: document.getElementById('adValue').value || null,
   };
 
   if (!data.productName) { showToast('⚠️ 请至少填写产品名称'); return; }
   if (!data.price || !data.cost1688) { showToast('⚠️ 售价和1688成本为必填项'); return; }
 
   const r = analyzeProduct(data);
+
+  // Analyze competitors
+  const competitors = [];
+  document.querySelectorAll('.competitor-card').forEach(card => {
+    const cData = {
+      productName: card.querySelector('.comp-name')?.value?.trim() || '',
+      price: card.querySelector('.comp-price')?.value || '',
+      monthlySales: card.querySelector('.comp-sales')?.value || '',
+      reviewCount: card.querySelector('.comp-reviews')?.value || '',
+      rating: card.querySelector('.comp-rating')?.value || '',
+      cost1688: card.querySelector('.comp-cost')?.value || '',
+      negativeReviews: '',
+    };
+    if (cData.productName) {
+      const cr = analyzeProduct(cData);
+      competitors.push({ data: cData, result: cr });
+    }
+  });
+
   data.result = r;
+  data.competitors = competitors;
+  data.manualVerdict = data.manualVerdict || null;
+  data.manualNote = data.manualNote || '';
   data.createdAt = new Date().toISOString();
 
   // Save
   const products = loadProducts();
   const existingIdx = products.findIndex(p => p.asin && p.asin === data.asin);
-  if (existingIdx >= 0) products[existingIdx] = data;
-  else products.unshift(data);
+  if (existingIdx >= 0) {
+    data.manualVerdict = data.manualVerdict || products[existingIdx].manualVerdict;
+    data.manualNote = data.manualNote || products[existingIdx].manualNote || '';
+    products[existingIdx] = data;
+  } else {
+    products.unshift(data);
+  }
   saveProducts(products);
 
   renderReport(data, r);
@@ -396,8 +529,11 @@ function renderReport(data, r) {
     `<span class="tag bad">${cat} · ${info.count}条 (${r.totalLines > 0 ? Math.round(info.count/r.totalLines*100) : 0}%)</span>`
   ).join('');
 
-  // Verdict text
-  const verdictText = { '能做': '✅ ' + r.verdict, '暂缓': '⏸ ' + r.verdict, '不做': '🚫 ' + r.verdict };
+  // Effective verdict (manual override wins)
+  const effectiveVerdict = data.manualVerdict || r.verdict;
+  const effectiveVerdictClass = effectiveVerdict === '能做' ? 'go' : effectiveVerdict === '不做' ? 'skip' : 'wait';
+  const verdictText = { '能做': '✅ ' + effectiveVerdict, '暂缓': '⏸ ' + effectiveVerdict, '不做': '🚫 ' + effectiveVerdict };
+  const overriddenMark = data.manualVerdict ? '<span class="overridden-mark">✎ 手动</span>' : '';
 
   // Reason
   const beText = r.beUnits === Infinity ? '毛利≤0，无法回本' : `${r.beUnits}单回本 · 约${r.beDays}天（按当前月销）`;
@@ -407,17 +543,68 @@ function renderReport(data, r) {
       ? `评论${r.reviews}条，中等门槛，需差异化切入`
       : `评论${r.reviews}条，壁垒高，不建议切入`;
   const fixableText = r.fixableCount > 0
-    ? `差评${r.fixableCount}条属可改痛点（面料/包装/尺寸等），优化后评分有拉升空间`
+    ? `差评${r.fixableCount}条属可改痛点，优化后评分有拉升空间`
     : '差评无明确可改方向，需进一步调研';
   const supplyText = r.costCNY
     ? `1688采购成本约¥${r.costCNY}（≈$${r.costUSD}/件），需打样确认`
     : '待1688询价确认采购成本';
+  const marginText = r.adSpend > 0
+    ? `售价$${r.price.toFixed(2)}，毛利率${r.grossMargin}%，净利率${r.netMargin}%`
+    : `售价$${r.price.toFixed(2)}，毛利率${r.grossMargin}%`;
+
+  // Ad cost rows in profit breakdown
+  const adRows = r.adSpend > 0 ? `
+    <tr>
+      <td style="padding:3px 0;color:var(--muted);">➖ 广告费 (${r.adCostType === 'acos' ? 'ACoS ' + r.adCostValue + '%' : 'CPC $' + r.adCostValue.toFixed(2)})</td>
+      <td style="text-align:right;color:var(--red);">−$${r.adSpend}</td>
+    </tr>
+  ` : '';
+
+  const netRow = r.adSpend > 0 ? `
+    <tr style="border-top:2px solid var(--accent);">
+      <td style="padding:6px 0;font-weight:800;font-size:15px;">💰 净利 / 单</td>
+      <td style="text-align:right;font-weight:800;font-size:15px;color:${r.netProfit >= 0 ? 'var(--green)' : 'var(--red)'};">$${r.netProfit}</td>
+    </tr>
+    <tr>
+      <td style="padding:3px 0;color:var(--muted);">📊 净利率</td>
+      <td style="text-align:right;font-weight:700;color:var(--accent);">${r.netMargin}%</td>
+    </tr>
+  ` : `
+    <tr style="border-top:2px solid var(--accent);">
+      <td style="padding:6px 0;font-weight:800;font-size:15px;">💰 毛利 / 单</td>
+      <td style="text-align:right;font-weight:800;font-size:15px;color:var(--green);">$${r.grossProfit}</td>
+    </tr>
+    <tr>
+      <td style="padding:3px 0;color:var(--muted);">📊 毛利率</td>
+      <td style="text-align:right;font-weight:700;color:var(--accent);">${r.grossMargin}%</td>
+    </tr>
+  `;
+
+  // Competitor comparison table
+  let compHtml = '';
+  const comps = data.competitors || [];
+  if (comps.length > 0) {
+    compHtml = `<div class="section-title">📊 竞品对比</div>
+    <div class="comparison-wrap">
+    <table class="comparison-table">
+      <tr><th></th><th>主产品</th>${comps.map((c,i) => `<th>竞品${i+1}</th>`).join('')}</tr>
+      <tr><td>名称</td><td>${escapeHtml(data.productName).slice(0,12)}</td>${comps.map(c => `<td>${escapeHtml(c.data.productName).slice(0,12)}</td>`).join('')}</tr>
+      <tr><td>售价</td><td>$${r.price.toFixed(2)}</td>${comps.map(c => `<td>$${parseFloat(c.data.price||0).toFixed(2)}</td>`).join('')}</tr>
+      <tr><td>月销</td><td>${r.sales}</td>${comps.map(c => `<td>${c.result.sales}</td>`).join('')}</tr>
+      <tr><td>评论</td><td>${r.reviews}</td>${comps.map(c => `<td>${c.result.reviews}</td>`).join('')}</tr>
+      <tr><td>评分</td><td>⭐${r.rating.toFixed(1)}</td>${comps.map(c => `<td>⭐${c.result.rating.toFixed(1)}</td>`).join('')}</tr>
+      <tr><td>毛利/单</td><td class="highlight">$${r.grossProfit}</td>${comps.map(c => `<td>$${c.result.grossProfit}</td>`).join('')}</tr>
+      <tr><td>毛利率</td><td>${r.grossMargin}%</td>${comps.map(c => `<td>${c.result.grossMargin}%</td>`).join('')}</tr>
+      <tr><td>判断</td><td class="highlight">${effectiveVerdict}</td>${comps.map(c => `<td>${c.result.verdict}</td>`).join('')}</tr>
+    </table>
+    </div>`;
+  }
 
   const html = `
-    <div class="card" style="border-top: 3px solid var(--accent);">
+    <div class="card" id="report-card" style="border-top: 3px solid var(--accent);">
       <div class="card-header">
         <div class="product-name">${escapeHtml(data.productName)}</div>
-        <span class="verdict ${r.verdictClass}">${verdictText[r.verdict] || r.verdict}</span>
+        <span class="verdict ${effectiveVerdictClass}">${verdictText[effectiveVerdict] || effectiveVerdict}${overriddenMark}</span>
       </div>
       <div style="font-size:12px;color:var(--muted);margin-bottom:12px;">
         ${data.asin ? 'ASIN: ' + escapeHtml(data.asin) + ' · ' : ''}分析于 ${new Date(data.createdAt).toLocaleString('zh-CN')}
@@ -434,8 +621,8 @@ function renderReport(data, r) {
           <div class="label">评分</div>
         </div>
         <div class="metric">
-          <div class="value blue">$${r.grossProfit}</div>
-          <div class="label">毛利/单 · ${r.grossMargin}%</div>
+          <div class="value blue">$${r.netProfit}</div>
+          <div class="label">净利/单 · ${r.netMargin}%</div>
         </div>
         <div class="metric">
           <div class="value">${r.sales}</div>
@@ -475,14 +662,8 @@ function renderReport(data, r) {
             <td style="padding:3px 0;color:var(--muted);">➖ 头程运费（预估）</td>
             <td style="text-align:right;color:var(--red);">−$${r.shippingPerUnit}</td>
           </tr>
-          <tr style="border-top:2px solid var(--accent);">
-            <td style="padding:6px 0;font-weight:800;font-size:15px;">💰 毛利 / 单</td>
-            <td style="text-align:right;font-weight:800;font-size:15px;color:var(--green);">$${r.grossProfit}</td>
-          </tr>
-          <tr>
-            <td style="padding:3px 0;color:var(--muted);">📊 毛利率</td>
-            <td style="text-align:right;font-weight:700;color:var(--accent);">${r.grossMargin}%</td>
-          </tr>
+          ${adRows}
+          ${netRow}
           <tr>
             <td style="padding:3px 0;color:var(--muted);">📦 回本点</td>
             <td style="text-align:right;font-weight:600;">${beText}</td>
@@ -503,13 +684,30 @@ function renderReport(data, r) {
         <ol style="margin:0;padding-left:16px;">
           <li>${reviewText}</li>
           <li>${fixableText}</li>
-          <li>售价$${r.price.toFixed(2)}，毛利率${r.grossMargin}%，空间够</li>
+          <li>${marginText}，空间够</li>
           <li>${supplyText}</li>
           ${r.hardCount > 0 ? '<li style="color:var(--red);">⚠ 含电子/模具等硬伤需求，新手谨慎</li>' : ''}
+          ${r.adSpend > 0 && r.netMargin < 15 ? '<li style="color:var(--yellow);">⚠ 扣除广告费后净利率偏低，需优化投放或提价</li>' : ''}
         </ol>
       </div>
 
-      <button class="btn btn-outline btn-sm" style="margin-top:12px;" onclick="deleteProduct('${data.asin || data.productName}')">🗑 删除此报告</button>
+      <!-- Manual override -->
+      <div class="section-title">📝 手动判断</div>
+      <div class="override-bar">
+        <button class="btn-o ${effectiveVerdict==='能做'?'go-active':''}" onclick="overrideVerdict('${data.asin||data.productName}','能做')">✅ 能做</button>
+        <button class="btn-o ${effectiveVerdict==='暂缓'?'wait-active':''}" onclick="overrideVerdict('${data.asin||data.productName}','暂缓')">⏸ 暂缓</button>
+        <button class="btn-o ${effectiveVerdict==='不做'?'skip-active':''}" onclick="overrideVerdict('${data.asin||data.productName}','不做')">🚫 不做</button>
+      </div>
+      <div class="override-note">
+        <input placeholder="备注原因（选填）" value="${escapeHtml(data.manualNote||'')}" onchange="saveOverrideNote('${data.asin||data.productName}',this.value)">
+      </div>
+
+      ${compHtml}
+
+      <div class="export-row">
+        <button class="btn-export" onclick="exportImage()">📸 保存图片</button>
+        <button class="btn-outline btn-sm" style="flex:1" onclick="deleteProduct('${data.asin || data.productName}')">🗑 删除</button>
+      </div>
     </div>
   `;
 
@@ -563,6 +761,14 @@ function viewProduct(index) {
   document.getElementById('rating').value = p.rating || '';
   document.getElementById('cost1688').value = p.cost1688 || '';
   document.getElementById('negativeReviews').value = p.negativeReviews || '';
+  if (p.adCostType) {
+    document.getElementById('adType').value = p.adCostType;
+    toggleAdInput();
+    document.getElementById('adValue').value = p.adCostValue || '';
+  } else {
+    document.getElementById('adType').value = '';
+    document.getElementById('adValue').style.display = 'none';
+  }
 
   switchTab('analyze');
   if (p.result) renderReport(p, p.result);
@@ -628,6 +834,141 @@ function importData(event) {
   event.target.value = '';
 }
 
+// ==================== NEW FEATURES ====================
+
+// Ad cost input toggle
+function toggleAdInput() {
+  const type = document.getElementById('adType').value;
+  const input = document.getElementById('adValue');
+  const hint = document.getElementById('adHint');
+  input.style.display = type ? 'block' : 'none';
+  if (type === 'acos') { input.placeholder = '15'; hint.textContent = 'ACoS = 广告支出 ÷ 销售额 × 100%，建议填15-30'; }
+  else if (type === 'cpc') { input.placeholder = '1.50'; hint.textContent = 'CPC = 单次点击成本（美元），建议填1-3'; }
+  else hint.textContent = '';
+}
+
+// Competitor toggle
+function toggleCompetitor() {
+  document.getElementById('competitorSection').classList.toggle('open');
+  const body = document.getElementById('competitorBody');
+  if (!body.children.length) addCompetitor();
+}
+
+let competitorCount = 0;
+function addCompetitor() {
+  const body = document.getElementById('competitorBody');
+  if (competitorCount >= 2) { showToast('最多添加2个竞品'); return; }
+  competitorCount++;
+  const card = document.createElement('div');
+  card.className = 'competitor-card';
+  card.innerHTML = `
+    <button class="remove-btn" onclick="this.parentElement.remove();competitorCount--;">✕</button>
+    <div class="row"><div class="form-group">
+      <label>竞品名称 ${competitorCount}</label>
+      <input class="comp-name" placeholder="例：类似产品名">
+    </div></div>
+    <div class="row-3">
+      <div class="form-group"><label>售价 ($)</label><input class="comp-price" type="number" step="0.01" placeholder="15.99"></div>
+      <div class="form-group"><label>月销量</label><input class="comp-sales" type="number" placeholder="1500"></div>
+      <div class="form-group"><label>评论数</label><input class="comp-reviews" type="number" placeholder="80"></div>
+    </div>
+    <div class="row">
+      <div class="form-group"><label>评分</label><input class="comp-rating" type="number" step="0.1" min="1" max="5" placeholder="4.2"></div>
+      <div class="form-group"><label>1688成本 (¥)</label><input class="comp-cost" type="number" step="0.01" placeholder="8.50"></div>
+    </div>
+  `;
+  body.appendChild(card);
+}
+
+// Manual verdict override
+function overrideVerdict(id, newVerdict) {
+  const products = loadProducts();
+  const p = products.find(p => (p.asin || p.productName) === id);
+  if (!p) return;
+  p.manualVerdict = newVerdict === p.result.verdict ? null : newVerdict;
+  saveProducts(products);
+  renderReport(p, p.result);
+  showToast('判断已更新');
+}
+
+function saveOverrideNote(id, note) {
+  const products = loadProducts();
+  const p = products.find(p => (p.asin || p.productName) === id);
+  if (!p) return;
+  p.manualNote = note;
+  saveProducts(products);
+}
+
+// Export as image
+function exportImage() {
+  const card = document.getElementById('report-card');
+  if (!card) { showToast('⚠️ 先生成报告再导出'); return; }
+  showToast('⏳ 生成图片中...');
+  if (typeof html2canvas === 'undefined') {
+    const script = document.createElement('script');
+    script.src = 'https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js';
+    script.onload = () => doExport(card);
+    document.head.appendChild(script);
+  } else { doExport(card); }
+}
+
+function doExport(card) {
+  html2canvas(card, { backgroundColor: '#0f172a', scale: 2 }).then(canvas => {
+    const link = document.createElement('a');
+    link.download = '产品分析报告_' + new Date().toISOString().slice(0,10) + '.png';
+    link.href = canvas.toDataURL('image/png');
+    link.click();
+    showToast('📸 图片已保存');
+  }).catch(() => showToast('⚠️ 导出失败'));
+}
+
+// Statistics panel
+function renderStats() {
+  const products = loadProducts();
+  const panel = document.getElementById('statsPanel');
+  if (!products.length) { panel.innerHTML = ''; return; }
+
+  const total = products.length;
+  const goCount = products.filter(p => {
+    const v = (p.manualVerdict || p.result?.verdict || '');
+    return v === '能做';
+  }).length;
+  const waitCount = products.filter(p => {
+    const v = (p.manualVerdict || p.result?.verdict || '');
+    return v === '暂缓';
+  }).length;
+  const skipCount = total - goCount - waitCount;
+
+  const margins = products.map(p => parseFloat(p.result?.grossMargin) || 0).filter(m => m > 0);
+  const avgMargin = margins.length ? (margins.reduce((a,b)=>a+b,0) / margins.length).toFixed(1) : '—';
+
+  const dates = products.map(p => p.createdAt).filter(Boolean).sort();
+  const latest = dates.length ? new Date(dates[dates.length - 1]).toLocaleDateString('zh-CN') : '—';
+
+  const goPct = total > 0 ? Math.round(goCount/total*100) : 0;
+  const waitPct = total > 0 ? Math.round(waitCount/total*100) : 0;
+  const skipPct = total - goPct - waitPct;
+
+  panel.innerHTML = `
+    <div class="stats-grid">
+      <div class="stat-card"><div class="stat-value">${total}</div><div class="stat-label">📊 总分析数</div></div>
+      <div class="stat-card"><div class="stat-value" style="color:var(--accent);">${avgMargin}%</div><div class="stat-label">📈 平均毛利率</div></div>
+      <div class="stat-card">
+        <div class="stat-value" style="font-size:14px;">
+          <span style="color:var(--green);">✅${goCount}</span> <span style="color:var(--yellow);">⏸${waitCount}</span> <span style="color:var(--red);">🚫${skipCount}</span>
+        </div>
+        <div class="stat-label">能做 / 暂缓 / 不做</div>
+        <div class="stat-bar">
+          <div class="seg go" style="width:${goPct}%;"></div>
+          <div class="seg wait" style="width:${waitPct}%;"></div>
+          <div class="seg skip" style="width:${skipPct}%;"></div>
+        </div>
+      </div>
+      <div class="stat-card"><div class="stat-value" style="font-size:16px;">${latest}</div><div class="stat-label">🕐 最近分析</div></div>
+    </div>
+  `;
+}
+
 // ==================== UTILS ====================
 function switchTab(name) {
   document.querySelectorAll('.tab').forEach((t, i) => {
@@ -635,7 +976,7 @@ function switchTab(name) {
   });
   document.getElementById('panel-analyze').classList.toggle('active', name === 'analyze');
   document.getElementById('panel-history').classList.toggle('active', name === 'history');
-  if (name === 'history') renderProductList();
+  if (name === 'history') { renderStats(); renderProductList(); }
 }
 
 function showToast(msg) {
