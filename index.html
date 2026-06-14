@@ -132,7 +132,10 @@
   .product-item {
     background: var(--card); border: 1px solid var(--border); border-radius: 10px;
     padding: 14px; margin-bottom: 10px; cursor: pointer; transition: all 0.2s;
+    display: flex; gap: 12px; align-items: flex-start;
   }
+  .product-item .body { flex: 1; min-width: 0; }
+  .list-thumb { width: 48px; height: 48px; border-radius: 6px; object-fit: cover; flex-shrink: 0; border: 1px solid var(--border); background: rgba(0,0,0,0.3); }
   .product-item:active { border-color: var(--accent); }
   .product-item .top { display: flex; justify-content: space-between; align-items: center; }
   .product-item .name { font-weight: 700; font-size: 15px; flex: 1; }
@@ -753,8 +756,13 @@ function renderProductList() {
     const r = p.result || {};
     const vLabel = r.verdict === '能做' ? '✅ 能做' : r.verdict === '不做' ? '🚫 不做' : '⏸ 暂缓';
     const date = p.createdAt ? new Date(p.createdAt).toLocaleDateString('zh-CN') : '未知';
+    const imgHtml = p.imageData
+      ? `<img class="list-thumb" src="${p.imageData.value.replace(/"/g, '&quot;')}" onerror="this.style.display='none'">`
+      : '';
     return `
       <div class="product-item" onclick="viewProduct(${i})">
+        ${imgHtml}
+        <div class="body">
         <div class="top">
           <span class="name">${escapeHtml(p.productName || '未命名')}</span>
           <span style="font-size:12px;color:var(--muted);">${date}</span>
@@ -766,6 +774,7 @@ function renderProductList() {
           ⭐${p.rating || '?'} ·
           ${p.price ? '$' + p.price : ''} ·
           ${vLabel}
+        </div>
         </div>
       </div>
     `;
