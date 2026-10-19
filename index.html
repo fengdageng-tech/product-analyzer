@@ -96,6 +96,33 @@
   .verdict.go { background: rgba(74,222,128,0.15); color: var(--green); border: 1px solid rgba(74,222,128,0.3); }
   .verdict.wait { background: rgba(251,191,36,0.15); color: var(--yellow); border: 1px solid rgba(251,191,36,0.3); }
   .verdict.skip { background: rgba(248,113,113,0.15); color: var(--red); border: 1px solid rgba(248,113,113,0.3); }
+  .verdict.none { background: rgba(148,163,184,0.15); color: var(--muted); border: 1px solid rgba(148,163,184,0.3); }
+
+  /* 定制/公模切换 */
+  .type-toggle { display: flex; gap: 8px; }
+  .type-toggle button {
+    flex: 1; padding: 10px; border-radius: 8px; border: 1.5px solid var(--border);
+    background: transparent; color: var(--muted); font-size: 14px; font-weight: 600;
+    cursor: pointer; font-family: inherit; transition: all 0.15s;
+  }
+  .type-toggle button.active { border-color: var(--accent); color: var(--accent); background: rgba(56,189,248,0.08); }
+
+  /* ML2 指标格 */
+  .ml2-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin-top: 10px; }
+  .ml2-grid .ml2-item {
+    background: rgba(255,255,255,0.03); border: 1px solid var(--border); border-radius: 8px;
+    padding: 8px 10px; display: flex; justify-content: space-between; align-items: center; font-size: 12px;
+  }
+  .ml2-grid .ml2-item .k { color: var(--muted); }
+  .ml2-grid .ml2-item .v { font-weight: 700; }
+
+  /* 定制成本红线盒 */
+  .ceiling-box {
+    background: var(--input-bg); border-left: 3px solid var(--yellow);
+    border-radius: 8px; padding: 14px; font-size: 14px; line-height: 1.9;
+  }
+  .ceiling-box .big { font-size: 22px; font-weight: 800; color: var(--yellow); }
+  .seg.none { background: var(--border); }
 
   .metric-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; margin-bottom: 14px; }
   .metric {
@@ -266,7 +293,7 @@
 <body>
 
 <h1>产品分析报告</h1>
-<div class="subtitle">跨境产品开发 · 判断工具</div>
+<div class="subtitle">跨境产品开发 · 判断工具（欧洲站）</div>
 
 <div class="tabs">
   <div class="tab active" onclick="switchTab('analyze')">🔍 分析产品</div>
@@ -298,16 +325,16 @@
   </div>
   <div class="row-3">
     <div class="form-group">
-      <label>售价 <span class="unit">($)</span></label>
-      <input id="price" type="number" step="0.01" placeholder="17.99">
+      <label>售价 <span class="unit">(€)</span></label>
+      <input id="price" type="number" step="0.01" placeholder="10.99">
     </div>
     <div class="form-group">
       <label>月销量</label>
-      <input id="monthlySales" type="number" placeholder="2010">
+      <input id="monthlySales" type="number" placeholder="850">
     </div>
     <div class="form-group">
       <label>评论数</label>
-      <input id="reviewCount" type="number" placeholder="26">
+      <input id="reviewCount" type="number" placeholder="38">
     </div>
   </div>
   <div class="row">
@@ -316,8 +343,48 @@
       <input id="rating" type="number" step="0.1" min="1" max="5" placeholder="3.9">
     </div>
     <div class="form-group">
-      <label>1688采购成本 <span class="unit">(¥ 人民币)</span></label>
-      <input id="cost1688" type="number" step="0.01" placeholder="10.50">
+      <label>FBA配送费 <span class="unit">(€ 必填)</span></label>
+      <input id="fbaFee" type="number" step="0.01" placeholder="2.54">
+    </div>
+  </div>
+  <div class="form-group">
+    <label>是否定制</label>
+    <div class="type-toggle">
+      <button type="button" id="typeGongmo" class="active" onclick="setProdType('gongmo')">公模 · 成本已知</button>
+      <button type="button" id="typeDingzhi" onclick="setProdType('dingzhi')">定制 · 成本未定</button>
+    </div>
+  </div>
+  <div class="form-group" id="costGroup">
+    <label>1688采购成本 <span class="unit">(¥ 人民币)</span></label>
+    <input id="cost1688" type="number" step="0.01" placeholder="10.80">
+  </div>
+  <div class="form-group" id="targetMarginGroup" style="display:none;">
+    <label>目标利润率 <span class="unit">(%) · 成本红线按此反推</span></label>
+    <input id="targetMargin" type="number" step="1" value="15" placeholder="15">
+  </div>
+  <div class="row">
+    <div class="form-group">
+      <label>重量 <span class="unit">(KG)</span></label>
+      <input id="weightKg" type="number" step="0.01" placeholder="0.08">
+    </div>
+    <div class="form-group">
+      <label>头程单价 <span class="unit">(¥/kg)</span></label>
+      <input id="tcRate" type="number" step="0.1" value="30" placeholder="30">
+    </div>
+  </div>
+  <div class="row">
+    <div class="form-group">
+      <label>增值税税点</label>
+      <select id="vatCountry">
+        <option value="DE" selected>德国 19%</option>
+        <option value="FR">法国 20%</option>
+        <option value="IT">意大利 22%</option>
+        <option value="ES">西班牙 21%</option>
+      </select>
+    </div>
+    <div class="form-group">
+      <label>汇率 <span class="unit">(€→¥)</span></label>
+      <input id="hl" type="number" step="0.01" value="7.3" placeholder="7.3">
     </div>
   </div>
   <div class="form-group">
@@ -326,7 +393,7 @@
       <select id="adType" onchange="toggleAdInput()">
         <option value="">不投广告</option>
         <option value="acos">ACoS (%)</option>
-        <option value="cpc">CPC ($)</option>
+        <option value="cpc">CPC (€)</option>
       </select>
       <input id="adValue" type="number" step="0.1" placeholder="15" style="display:none">
     </div>
@@ -387,7 +454,7 @@
 
 <script>
 // ==================== DATA LAYER ====================
-const STORAGE_KEY = 'product_analyzer_db';
+const STORAGE_KEY = 'product_analyzer_db_v2'; // v2：欧洲站口径，旧美元数据弃用
 
 function loadProducts() {
   try { return JSON.parse(localStorage.getItem(STORAGE_KEY)) || []; }
@@ -398,50 +465,80 @@ function saveProducts(products) {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(products));
 }
 
-// ==================== ANALYSIS ENGINE ====================
+// ==================== ANALYSIS ENGINE（欧洲站 ML2 口径）====================
+const VAT_RATES = { DE: 0.19, FR: 0.20, IT: 0.22, ES: 0.21 };
+
 function analyzeProduct(data) {
   const price = parseFloat(data.price) || 0;
   const sales = parseInt(data.monthlySales) || 0;
   const reviews = parseInt(data.reviewCount) || 0;
   const rating = parseFloat(data.rating) || 0;
   const costCNY = parseFloat(data.cost1688) || 0;
-  const costUSD = costCNY / 7.25;
+  const weightKg = parseFloat(data.weightKg) || 0;
+  const tcRate = parseFloat(data.tcRate) || 0;
+  const hl = parseFloat(data.hl) || 7.3;
+  const fbaFee = parseFloat(data.fbaFee) || 0;
+  const vat = VAT_RATES[data.vatCountry] || 0.19;
+  const prodType = data.prodType || 'gongmo';
+  const targetMargin = (parseFloat(data.targetMargin) || 15) / 100;
 
-  // FBA fee estimate by typical small/standard items
-  const referralFee = price * 0.15;
-  let fbaFee = 3.50;
-  if (price > 15 && price < 25) fbaFee = 4.50;
-  if (price >= 25 && price < 40) fbaFee = 5.20;
-  if (price >= 40) fbaFee = 6.00;
+  const BM = 0.22;          // 仓储+杂费扣点（ML2表德法口径）
+  const COMMISSION = 0.154; // 平台佣金 15.4%
 
-  const landedRevenue = price - referralFee - fbaFee;
-  const shippingPerUnit = 0.45;
-  const grossProfit = landedRevenue - costUSD - shippingPerUnit;
-  const grossMargin = price > 0 ? (grossProfit / price) * 100 : 0;
-
-  const beUnits = grossProfit > 0 ? Math.ceil(costUSD * 30 / grossProfit) : Infinity;
-  const beDays = sales > 0 && beUnits !== Infinity ? Math.ceil(beUnits / (sales / 30)) : Infinity;
-
-  // Ad cost
-  const adCostType = data.adCostType || null;
-  const adCostValue = parseFloat(data.adCostValue) || 0;
-  let adSpend = 0;
-  if (adCostType === 'acos' && adCostValue > 0) { adSpend = price * (adCostValue / 100); }
-  if (adCostType === 'cpc' && adCostValue > 0) { adSpend = adCostValue; }
-  const netProfit = grossProfit - adSpend;
-  const netMargin = price > 0 ? (netProfit / price) * 100 : 0;
-
-  // Review threshold
+  // 评论/评分门槛（市场面参考色，不下结论）
   let reviewLevel, reviewLabel;
-  if (reviews < 100) { reviewLevel = 'green'; reviewLabel = '低门槛 · 新品可进'; }
-  else if (reviews < 300) { reviewLevel = 'yellow'; reviewLabel = '中等门槛 · 需差异化'; }
-  else { reviewLevel = 'red'; reviewLabel = '高壁垒 · 不推荐切入'; }
+  if (reviews < 100) { reviewLevel = 'green'; reviewLabel = '低门槛'; }
+  else if (reviews < 300) { reviewLevel = 'yellow'; reviewLabel = '中等门槛'; }
+  else { reviewLevel = 'red'; reviewLabel = '高壁垒'; }
 
-  // Rating assessment
   let ratingLevel;
   if (rating >= 4.3) ratingLevel = 'green';
   else if (rating >= 3.8) ratingLevel = 'yellow';
   else ratingLevel = 'red';
+
+  // ---- 利润核算（公模且填了采购成本才算；定制成本未定）----
+  const hasProfit = prodType !== 'dingzhi' && costCNY > 0 && price > 0;
+  let profit = null;
+  if (hasProfit) {
+    const tu = weightKg * tcRate + costCNY;              // 人民币总成本（采购+头程）
+    const cb = tu / hl;                                  // 成本€（头程摊入）
+    const referralFee = price * COMMISSION;
+    const vatAmount = price * vat / (1 + vat);
+    const ml = price - referralFee - cb - fbaFee - vatAmount;
+    const ml2 = price > 0 ? ml / price : 0;
+    const hb = price * ml2 * hl;                         // 人民币毛利
+    const hb2 = tu > 0 ? hb / tu : 0;                    // 成本回报倍数
+    const floorPrice = (cb + fbaFee) / (0.846 - vat / (1 + vat) - BM);
+    const floorAcos = (price - 0.05 * price - 0.153 * price - 0.95 * price * vat / (1 + vat) - cb - fbaFee - 0.5) / price;
+    const promoPrice30 = (cb + fbaFee + 0.5) / (1 - 0.05 - COMMISSION - 0.95 * vat / (1 + vat) - BM);
+    const refBid = ml / 10;
+
+    const adCostType = data.adCostType || null;
+    const adCostValue = parseFloat(data.adCostValue) || 0;
+    let adSpend = 0;
+    if (adCostType === 'acos' && adCostValue > 0) { adSpend = price * (adCostValue / 100); }
+    if (adCostType === 'cpc' && adCostValue > 0) { adSpend = adCostValue; }
+    const netProfit = ml - adSpend;
+    const netMargin = price > 0 ? netProfit / price : 0;
+
+    profit = {
+      tu: tu.toFixed(2), cb: cb.toFixed(2), referralFee: referralFee.toFixed(2),
+      vatAmount: vatAmount.toFixed(2), vatPct: Math.round(vat * 100),
+      ml: ml.toFixed(2), ml2: (ml2 * 100).toFixed(1),
+      hb: hb.toFixed(1), hb2: hb2.toFixed(2),
+      floorPrice: floorPrice.toFixed(2), floorAcos: (floorAcos * 100).toFixed(1),
+      promoPrice30: promoPrice30.toFixed(2), refBid: refBid.toFixed(2),
+      adCostType, adCostValue, adSpend: adSpend.toFixed(2),
+      netProfit: netProfit.toFixed(2), netMargin: (netMargin * 100).toFixed(1),
+    };
+  }
+
+  // ---- 定制成本红线（成本未定时反推打样询价上限）----
+  let costCeiling = null;
+  if (!hasProfit && price > 0) {
+    const val = (price * (0.846 - vat / (1 + vat)) - fbaFee - price * targetMargin) * hl - weightKg * tcRate;
+    costCeiling = { value: val.toFixed(2), targetPct: Math.round(targetMargin * 100), ok: val > 0 };
+  }
 
   // Negative review analysis
   const rawText = data.negativeReviews || '';
@@ -500,37 +597,13 @@ function analyzeProduct(data) {
   const hardCount = badCategories.filter(([k]) => hardCategories.includes(k)).reduce((s, [_, v]) => s + v.count, 0);
   const totalBad = badCategories.reduce((s, [_, v]) => s + v.count, 0);
 
-  // Verdict
-  const useMargin = adSpend > 0 ? netMargin : grossMargin;
-  let verdict, verdictClass;
-  if (hardCount > 0 && hardCount / totalBad > 0.2) {
-    verdict = '不做'; verdictClass = 'skip';
-  } else if (useMargin <= 15) {
-    verdict = '暂缓'; verdictClass = 'wait';
-  } else if (reviews < 100 && fixableCount > 0 && useMargin > 25) {
-    verdict = '能做'; verdictClass = 'go';
-  } else if (reviews < 100 && fixableCount > 0 && useMargin > 20) {
-    verdict = '能做'; verdictClass = 'go';
-  } else if (reviews >= 300) {
-    verdict = '不做'; verdictClass = 'skip';
-  } else if (hardCount > 0) {
-    verdict = '暂缓'; verdictClass = 'wait';
-  } else {
-    verdict = '暂缓'; verdictClass = 'wait';
-  }
-
   return {
-    price, sales, reviews, rating, costCNY, costUSD: costUSD.toFixed(2),
-    referralFee: referralFee.toFixed(2), fbaFee: fbaFee.toFixed(2),
-    landedRevenue: landedRevenue.toFixed(2), shippingPerUnit: shippingPerUnit.toFixed(2),
-    grossProfit: grossProfit.toFixed(2), grossMargin: grossMargin.toFixed(1),
-    adCostType, adCostValue, adSpend: adSpend.toFixed(2),
-    netProfit: netProfit.toFixed(2), netMargin: netMargin.toFixed(1),
-    beUnits, beDays,
+    price, sales, reviews, rating, costCNY, prodType,
+    weightKg, tcRate, hl, fbaFee, vat,
+    hasProfit, profit, costCeiling,
     reviewLevel, reviewLabel, ratingLevel,
     categories, totalLines, badCategories, topBad,
     fixableCount, hardCount, totalBad,
-    verdict, verdictClass,
   };
 }
 
@@ -543,18 +616,28 @@ function generateReport() {
     monthlySales: document.getElementById('monthlySales').value,
     reviewCount: document.getElementById('reviewCount').value,
     rating: document.getElementById('rating').value,
-    cost1688: document.getElementById('cost1688').value,
+    prodType: currentProdType,
+    cost1688: currentProdType === 'gongmo' ? document.getElementById('cost1688').value : '',
+    targetMargin: document.getElementById('targetMargin').value,
+    weightKg: document.getElementById('weightKg').value,
+    tcRate: document.getElementById('tcRate').value,
+    fbaFee: document.getElementById('fbaFee').value,
+    vatCountry: document.getElementById('vatCountry').value,
+    hl: document.getElementById('hl').value,
     negativeReviews: document.getElementById('negativeReviews').value,
     adCostType: document.getElementById('adType').value || null,
     adCostValue: document.getElementById('adValue').value || null,
   };
 
   if (!data.productName) { showToast('⚠️ 请至少填写产品名称'); return; }
-  if (!data.price || !data.cost1688) { showToast('⚠️ 售价和1688成本为必填项'); return; }
+  if (!data.price) { showToast('⚠️ 售价为必填项'); return; }
+  if (!data.fbaFee) { showToast('⚠️ FBA配送费为必填项'); return; }
+  if (!data.weightKg) { showToast('⚠️ 重量为必填项（算头程运费用）'); return; }
+  if (data.prodType === 'gongmo' && !data.cost1688) { showToast('⚠️ 公模产品需填写1688采购成本'); return; }
 
   const r = analyzeProduct(data);
 
-  // Analyze competitors
+  // Analyze competitors（税点/汇率/头程沿用主产品）
   const competitors = [];
   document.querySelectorAll('.competitor-card').forEach(card => {
     const cData = {
@@ -564,6 +647,10 @@ function generateReport() {
       reviewCount: card.querySelector('.comp-reviews')?.value || '',
       rating: card.querySelector('.comp-rating')?.value || '',
       cost1688: card.querySelector('.comp-cost')?.value || '',
+      weightKg: card.querySelector('.comp-weight')?.value || '',
+      fbaFee: card.querySelector('.comp-fba')?.value || '',
+      prodType: 'gongmo',
+      tcRate: data.tcRate, hl: data.hl, vatCountry: data.vatCountry,
       negativeReviews: '',
     };
     if (cData.productName) {
@@ -575,17 +662,25 @@ function generateReport() {
   data.result = r;
   data.competitors = competitors;
   data.imageData = currentImageData || data.imageData || null;
-  data.manualVerdict = data.manualVerdict || null;
-  data.manualNote = data.manualNote || '';
   data.createdAt = new Date().toISOString();
 
-  // Save
+  // Save（保留已有记录的判断与备注）
   const products = loadProducts();
   const existingIdx = products.findIndex(p => p.asin && p.asin === data.asin);
+  const existing = existingIdx >= 0 ? products[existingIdx] : null;
+  data.manualVerdict = (existing && existing.manualVerdict) || null;
+  data.manualNote = (existing && existing.manualNote) || '';
+  data.autoVerdict = existing ? !!existing.autoVerdict : false;
+  data.imageData = data.imageData || (existing && existing.imageData) || null;
+
+  // 利润核算不出来 → 自动标暂缓；核算得出来 → 清掉自动暂缓（手动标记不受影响）
+  if (!r.hasProfit) {
+    if (!data.manualVerdict || data.autoVerdict) { data.manualVerdict = '暂缓'; data.autoVerdict = true; }
+  } else if (data.autoVerdict) {
+    data.manualVerdict = null; data.autoVerdict = false;
+  }
+
   if (existingIdx >= 0) {
-    data.imageData = data.imageData || products[existingIdx].imageData || null;
-    data.manualVerdict = data.manualVerdict || products[existingIdx].manualVerdict;
-    data.manualNote = data.manualNote || products[existingIdx].manualNote || '';
     products[existingIdx] = data;
   } else {
     products.unshift(data);
@@ -604,62 +699,118 @@ function generateReport() {
 
 function renderReport(data, r) {
   const colorMap = { green: 'green', yellow: 'yellow', red: 'red', blue: 'blue' };
+  const p = r.profit;
 
   // Top bad tags
   const badTagsHtml = r.topBad.map(([cat, info]) =>
     `<span class="tag bad">${cat} · ${info.count}条 (${r.totalLines > 0 ? Math.round(info.count/r.totalLines*100) : 0}%)</span>`
   ).join('');
 
-  // Effective verdict (manual override wins)
-  const effectiveVerdict = data.manualVerdict || r.verdict;
-  const effectiveVerdictClass = effectiveVerdict === '能做' ? 'go' : effectiveVerdict === '不做' ? 'skip' : 'wait';
-  const verdictText = { '能做': '✅ ' + effectiveVerdict, '暂缓': '⏸ ' + effectiveVerdict, '不做': '🚫 ' + effectiveVerdict };
-  const overriddenMark = data.manualVerdict ? '<span class="overridden-mark">✎ 手动</span>' : '';
+  // 我的判断（只认标记，系统不下结论）
+  const mv = data.manualVerdict;
+  const vClass = mv === '能做' ? 'go' : mv === '不做' ? 'skip' : mv === '暂缓' ? 'wait' : 'none';
+  const vText = mv === '能做' ? '✅ 能做'
+    : mv === '暂缓' ? (data.autoVerdict ? '⏸ 暂缓 · 自动' : '⏸ 暂缓')
+    : mv === '不做' ? '🚫 不做'
+    : '未判断';
 
-  // Reason
-  const beText = r.beUnits === Infinity ? '毛利≤0，无法回本' : `${r.beUnits}单回本 · 约${r.beDays}天（按当前月销）`;
-  const reviewText = r.reviews < 100
-    ? `评论仅${r.reviews}条，对手弱，新品可切入`
-    : r.reviews < 300
-      ? `评论${r.reviews}条，中等门槛，需差异化切入`
-      : `评论${r.reviews}条，壁垒高，不建议切入`;
-  const fixableText = r.fixableCount > 0
-    ? `差评${r.fixableCount}条属可改痛点，优化后评分有拉升空间`
-    : '差评无明确可改方向，需进一步调研';
-  const supplyText = r.costCNY
-    ? `1688采购成本约¥${r.costCNY}（≈$${r.costUSD}/件），需打样确认`
-    : '待1688询价确认采购成本';
-  const marginText = r.adSpend > 0
-    ? `售价$${r.price.toFixed(2)}，毛利率${r.grossMargin}%，净利率${r.netMargin}%`
-    : `售价$${r.price.toFixed(2)}，毛利率${r.grossMargin}%`;
+  // Metric tiles
+  let profitTile;
+  if (p) {
+    const useNet = parseFloat(p.adSpend) > 0;
+    const mVal = useNet ? p.netMargin : p.ml2;
+    const mColor = parseFloat(mVal) >= 15 ? 'green' : parseFloat(mVal) >= 10 ? 'yellow' : 'red';
+    profitTile = `<div class="metric"><div class="value ${mColor}">${mVal}%</div><div class="label">利润率 · 利润€${p.ml}</div></div>`;
+  } else if (r.costCeiling) {
+    profitTile = r.costCeiling.ok
+      ? `<div class="metric"><div class="value yellow">¥${r.costCeiling.value}</div><div class="label">打样成本上限</div></div>`
+      : `<div class="metric"><div class="value red">—</div><div class="label">售价达不到目标</div></div>`;
+  } else {
+    profitTile = `<div class="metric"><div class="value">—</div><div class="label">利润待核算</div></div>`;
+  }
 
-  // Ad cost rows in profit breakdown
-  const adRows = r.adSpend > 0 ? `
-    <tr>
-      <td style="padding:3px 0;color:var(--muted);">➖ 广告费 (${r.adCostType === 'acos' ? 'ACoS ' + r.adCostValue + '%' : 'CPC $' + r.adCostValue.toFixed(2)})</td>
-      <td style="text-align:right;color:var(--red);">−$${r.adSpend}</td>
-    </tr>
-  ` : '';
+  const costTile = r.costCNY > 0
+    ? `<div class="metric"><div class="value">≈¥${r.costCNY.toFixed(2)}</div><div class="label">1688成本</div></div>`
+    : `<div class="metric"><div class="value">待打样</div><div class="label">1688成本</div></div>`;
 
-  const netRow = r.adSpend > 0 ? `
-    <tr style="border-top:2px solid var(--accent);">
-      <td style="padding:6px 0;font-weight:800;font-size:15px;">💰 净利 / 单</td>
-      <td style="text-align:right;font-weight:800;font-size:15px;color:${r.netProfit >= 0 ? 'var(--green)' : 'var(--red)'};">$${r.netProfit}</td>
-    </tr>
-    <tr>
-      <td style="padding:3px 0;color:var(--muted);">📊 净利率</td>
-      <td style="text-align:right;font-weight:700;color:var(--accent);">${r.netMargin}%</td>
-    </tr>
-  ` : `
-    <tr style="border-top:2px solid var(--accent);">
-      <td style="padding:6px 0;font-weight:800;font-size:15px;">💰 毛利 / 单</td>
-      <td style="text-align:right;font-weight:800;font-size:15px;color:var(--green);">$${r.grossProfit}</td>
-    </tr>
-    <tr>
-      <td style="padding:3px 0;color:var(--muted);">📊 毛利率</td>
-      <td style="text-align:right;font-weight:700;color:var(--accent);">${r.grossMargin}%</td>
-    </tr>
-  `;
+  // Profit breakdown
+  let profitHtml = '';
+  if (p) {
+    const adRows = parseFloat(p.adSpend) > 0 ? `
+      <tr>
+        <td style="padding:3px 0;color:var(--muted);">➖ 广告费 (${p.adCostType === 'acos' ? 'ACoS ' + p.adCostValue + '%' : 'CPC €' + parseFloat(p.adCostValue).toFixed(2)})</td>
+        <td style="text-align:right;color:var(--red);">−€${p.adSpend}</td>
+      </tr>
+    ` : '';
+    const netRows = parseFloat(p.adSpend) > 0 ? `
+      <tr style="border-top:2px solid var(--accent);">
+        <td style="padding:6px 0;font-weight:800;font-size:15px;">💰 净利 / 单</td>
+        <td style="text-align:right;font-weight:800;font-size:15px;color:${parseFloat(p.netProfit) >= 0 ? 'var(--green)' : 'var(--red)'};">€${p.netProfit}</td>
+      </tr>
+      <tr>
+        <td style="padding:3px 0;color:var(--muted);">📊 净利率</td>
+        <td style="text-align:right;font-weight:700;color:var(--accent);">${p.netMargin}%</td>
+      </tr>
+    ` : `
+      <tr style="border-top:2px solid var(--accent);">
+        <td style="padding:6px 0;font-weight:800;font-size:15px;">💰 利润 / 单</td>
+        <td style="text-align:right;font-weight:800;font-size:15px;color:var(--green);">€${p.ml}</td>
+      </tr>
+      <tr>
+        <td style="padding:3px 0;color:var(--muted);">📊 利润率</td>
+        <td style="text-align:right;font-weight:700;color:var(--accent);">${p.ml2}%</td>
+      </tr>
+    `;
+    profitHtml = `
+      <div class="section-title">💰 利润拆解（€）</div>
+      <div style="font-size:13px;line-height:2.2;padding:8px 0;">
+        <table style="width:100%;border-collapse:collapse;color:var(--text);">
+          <tr>
+            <td style="padding:3px 0;color:var(--muted);">售价（Amazon）</td>
+            <td style="text-align:right;font-weight:700;">€${r.price.toFixed(2)}</td>
+          </tr>
+          <tr>
+            <td style="padding:3px 0;color:var(--muted);">➖ 佣金（15.4%）</td>
+            <td style="text-align:right;color:var(--red);">−€${p.referralFee}</td>
+          </tr>
+          <tr>
+            <td style="padding:3px 0;color:var(--muted);">➖ 采购+头程（¥${p.tu} ÷ ${r.hl}）</td>
+            <td style="text-align:right;color:var(--red);">−€${p.cb}</td>
+          </tr>
+          <tr>
+            <td style="padding:3px 0;color:var(--muted);">➖ FBA配送费</td>
+            <td style="text-align:right;color:var(--red);">−€${r.fbaFee.toFixed(2)}</td>
+          </tr>
+          <tr style="border-bottom:1px dashed var(--border);">
+            <td style="padding:3px 0;color:var(--muted);">➖ 增值税（${p.vatPct}%）</td>
+            <td style="text-align:right;color:var(--red);">−€${p.vatAmount}</td>
+          </tr>
+          ${adRows}
+          ${netRows}
+        </table>
+      </div>
+      <div class="ml2-grid">
+        <div class="ml2-item"><span class="k">人民币毛利</span><span class="v">¥${p.hb}</span></div>
+        <div class="ml2-item"><span class="k">成本回报倍数</span><span class="v">${p.hb2}倍</span></div>
+        <div class="ml2-item"><span class="k">保底价格</span><span class="v">€${p.floorPrice}</span></div>
+        <div class="ml2-item"><span class="k">30%ACOS促销价</span><span class="v">€${p.promoPrice30}</span></div>
+        <div class="ml2-item"><span class="k">保底价促销ACOS</span><span class="v">${p.floorAcos}%</span></div>
+        <div class="ml2-item"><span class="k">参考广告出价</span><span class="v">€${p.refBid}</span></div>
+      </div>
+    `;
+  } else {
+    const ceil = r.costCeiling;
+    profitHtml = `
+      <div class="section-title">💰 利润核算</div>
+      <div class="ceiling-box">
+        ⚠️ 定制产品 · 成本未定，利润暂不核算<br>
+        ${ceil && ceil.ok
+          ? `<span class="big">¥${ceil.value}</span>　← 打样询价成本上限<br><span style="font-size:12px;color:var(--muted);">按目标利润率 ${ceil.targetPct}% 反推，报价超过这个数利润率就不达标</span>`
+          : `<span style="color:var(--red);">当前售价即使零成本也达不到 ${ceil ? ceil.targetPct : 15}% 目标利润率，建议提高售价或降低预期</span>`}
+        <br><span style="font-size:12px;color:var(--muted);">打样报价后，切回「公模」填入成本即可出全套利润</span>
+      </div>
+    `;
+  }
 
   // Competitor comparison table
   let compHtml = '';
@@ -670,13 +821,12 @@ function renderReport(data, r) {
     <table class="comparison-table">
       <tr><th></th><th>主产品</th>${comps.map((c,i) => `<th>竞品${i+1}</th>`).join('')}</tr>
       <tr><td>名称</td><td>${escapeHtml(data.productName).slice(0,12)}</td>${comps.map(c => `<td>${escapeHtml(c.data.productName).slice(0,12)}</td>`).join('')}</tr>
-      <tr><td>售价</td><td>$${r.price.toFixed(2)}</td>${comps.map(c => `<td>$${parseFloat(c.data.price||0).toFixed(2)}</td>`).join('')}</tr>
+      <tr><td>售价</td><td>€${r.price.toFixed(2)}</td>${comps.map(c => `<td>€${parseFloat(c.data.price||0).toFixed(2)}</td>`).join('')}</tr>
       <tr><td>月销</td><td>${r.sales}</td>${comps.map(c => `<td>${c.result.sales}</td>`).join('')}</tr>
       <tr><td>评论</td><td>${r.reviews}</td>${comps.map(c => `<td>${c.result.reviews}</td>`).join('')}</tr>
       <tr><td>评分</td><td>⭐${r.rating.toFixed(1)}</td>${comps.map(c => `<td>⭐${c.result.rating.toFixed(1)}</td>`).join('')}</tr>
-      <tr><td>毛利/单</td><td class="highlight">$${r.grossProfit}</td>${comps.map(c => `<td>$${c.result.grossProfit}</td>`).join('')}</tr>
-      <tr><td>毛利率</td><td>${r.grossMargin}%</td>${comps.map(c => `<td>${c.result.grossMargin}%</td>`).join('')}</tr>
-      <tr><td>判断</td><td class="highlight">${effectiveVerdict}</td>${comps.map(c => `<td>${c.result.verdict}</td>`).join('')}</tr>
+      <tr><td>利润/单</td><td class="highlight">${p ? '€' + p.ml : '—'}</td>${comps.map(c => `<td>${c.result.profit ? '€' + c.result.profit.ml : '—'}</td>`).join('')}</tr>
+      <tr><td>利润率</td><td>${p ? p.ml2 + '%' : '—'}</td>${comps.map(c => `<td>${c.result.profit ? c.result.profit.ml2 + '%' : '—'}</td>`).join('')}</tr>
     </table>
     </div>`;
   }
@@ -685,10 +835,10 @@ function renderReport(data, r) {
     <div class="card" id="report-card" style="border-top: 3px solid var(--accent);">
       <div class="card-header">
         <div class="product-name">${escapeHtml(data.productName)}</div>
-        <span class="verdict ${effectiveVerdictClass}">${verdictText[effectiveVerdict] || effectiveVerdict}${overriddenMark}</span>
+        <span class="verdict ${vClass}">${vText}</span>
       </div>
       <div style="font-size:12px;color:var(--muted);margin-bottom:12px;">
-        ${data.asin ? 'ASIN: ' + escapeHtml(data.asin) + ' · ' : ''}分析于 ${new Date(data.createdAt).toLocaleString('zh-CN')}
+        ${data.asin ? 'ASIN: ' + escapeHtml(data.asin) + ' · ' : ''}${data.prodType === 'dingzhi' ? '定制 · ' : '公模 · '}${data.vatCountry || 'DE'} · 分析于 ${new Date(data.createdAt).toLocaleString('zh-CN')}
       </div>
 
       ${data.imageData ? `<img class="card-img" src="${data.imageData.value.replace(/"/g, '&quot;')}" alt="产品主图" onerror="this.style.display='none'">` : ''}
@@ -703,56 +853,19 @@ function renderReport(data, r) {
           <div class="value ${colorMap[r.ratingLevel]}">⭐${r.rating.toFixed(1)}</div>
           <div class="label">评分</div>
         </div>
-        <div class="metric">
-          <div class="value blue">$${r.netProfit}</div>
-          <div class="label">净利/单 · ${r.netMargin}%</div>
-        </div>
+        ${profitTile}
         <div class="metric">
           <div class="value">${r.sales}</div>
           <div class="label">月销量</div>
         </div>
         <div class="metric">
-          <div class="value">$${r.price.toFixed(2)}</div>
+          <div class="value">€${r.price.toFixed(2)}</div>
           <div class="label">售价</div>
         </div>
-        <div class="metric">
-          <div class="value">≈¥${r.costCNY.toFixed(2)}</div>
-          <div class="label">1688成本</div>
-        </div>
+        ${costTile}
       </div>
 
-      <!-- Profit breakdown -->
-      <div class="section-title">💰 利润拆解</div>
-      <div style="font-size:13px;line-height:2.2;padding:8px 0;">
-        <table style="width:100%;border-collapse:collapse;color:var(--text);">
-          <tr>
-            <td style="padding:3px 0;color:var(--muted);">🇺🇸 售价（Amazon）</td>
-            <td style="text-align:right;font-weight:700;">$${r.price.toFixed(2)}</td>
-          </tr>
-          <tr>
-            <td style="padding:3px 0;color:var(--muted);">➖ 佣金（15%）</td>
-            <td style="text-align:right;color:var(--red);">−$${r.referralFee}</td>
-          </tr>
-          <tr>
-            <td style="padding:3px 0;color:var(--muted);">➖ FBA配送费</td>
-            <td style="text-align:right;color:var(--red);">−$${r.fbaFee}</td>
-          </tr>
-          <tr style="border-bottom:1px dashed var(--border);">
-            <td style="padding:3px 0;color:var(--muted);">➖ 1688采购（¥${r.costCNY.toFixed(2)} ÷ 7.25）</td>
-            <td style="text-align:right;color:var(--red);">−$${r.costUSD}</td>
-          </tr>
-          <tr>
-            <td style="padding:3px 0;color:var(--muted);">➖ 头程运费（预估）</td>
-            <td style="text-align:right;color:var(--red);">−$${r.shippingPerUnit}</td>
-          </tr>
-          ${adRows}
-          ${netRow}
-          <tr>
-            <td style="padding:3px 0;color:var(--muted);">📦 回本点</td>
-            <td style="text-align:right;font-weight:600;">${beText}</td>
-          </tr>
-        </table>
-      </div>
+      ${profitHtml}
 
       <!-- Negative review analysis -->
       ${r.totalLines > 0 ? `
@@ -761,25 +874,12 @@ function renderReport(data, r) {
       <div style="font-size:12px;color:var(--muted);">共${r.totalLines}条差评 · ${r.fixableCount}条可改善 · ${r.hardCount}条硬伤</div>
       ` : ''}
 
-      <!-- Reason -->
-      <div class="section-title">判断理由</div>
-      <div class="reason-box">
-        <ol style="margin:0;padding-left:16px;">
-          <li>${reviewText}</li>
-          <li>${fixableText}</li>
-          <li>${marginText}，空间够</li>
-          <li>${supplyText}</li>
-          ${r.hardCount > 0 ? '<li style="color:var(--red);">⚠ 含电子/模具等硬伤需求，新手谨慎</li>' : ''}
-          ${r.adSpend > 0 && r.netMargin < 15 ? '<li style="color:var(--yellow);">⚠ 扣除广告费后净利率偏低，需优化投放或提价</li>' : ''}
-        </ol>
-      </div>
-
-      <!-- Manual override -->
-      <div class="section-title">📝 手动判断</div>
+      <!-- Manual verdict -->
+      <div class="section-title">📝 我的判断</div>
       <div class="override-bar">
-        <button class="btn-o ${effectiveVerdict==='能做'?'go-active':''}" onclick="overrideVerdict('${data.asin||data.productName}','能做')">✅ 能做</button>
-        <button class="btn-o ${effectiveVerdict==='暂缓'?'wait-active':''}" onclick="overrideVerdict('${data.asin||data.productName}','暂缓')">⏸ 暂缓</button>
-        <button class="btn-o ${effectiveVerdict==='不做'?'skip-active':''}" onclick="overrideVerdict('${data.asin||data.productName}','不做')">🚫 不做</button>
+        <button class="btn-o ${mv==='能做'?'go-active':''}" onclick="overrideVerdict('${data.asin||data.productName}','能做')">✅ 能做</button>
+        <button class="btn-o ${mv==='暂缓'?'wait-active':''}" onclick="overrideVerdict('${data.asin||data.productName}','暂缓')">⏸ 暂缓</button>
+        <button class="btn-o ${mv==='不做'?'skip-active':''}" onclick="overrideVerdict('${data.asin||data.productName}','不做')">🚫 不做</button>
       </div>
       <div class="override-note">
         <input placeholder="备注原因（选填）" value="${escapeHtml(data.manualNote||'')}" onchange="saveOverrideNote('${data.asin||data.productName}',this.value)">
@@ -808,8 +908,8 @@ function renderProductList() {
   }
 
   container.innerHTML = products.map((p, i) => {
-    const r = p.result || {};
-    const vLabel = r.verdict === '能做' ? '✅ 能做' : r.verdict === '不做' ? '🚫 不做' : '⏸ 暂缓';
+    const mv = p.manualVerdict;
+    const vLabel = mv === '能做' ? '✅ 能做' : mv === '暂缓' ? (p.autoVerdict ? '⏸ 暂缓(自动)' : '⏸ 暂缓') : mv === '不做' ? '🚫 不做' : '⚪ 未标';
     const date = p.createdAt ? new Date(p.createdAt).toLocaleDateString('zh-CN') : '未知';
     const imgHtml = p.imageData
       ? `<img class="list-thumb" src="${p.imageData.value.replace(/"/g, '&quot;')}" onerror="this.style.display='none'">`
@@ -827,7 +927,7 @@ function renderProductList() {
           销量${p.monthlySales || '?'} ·
           评论${p.reviewCount || '?'} ·
           ⭐${p.rating || '?'} ·
-          ${p.price ? '$' + p.price : ''} ·
+          ${p.price ? '€' + p.price : ''} ·
           ${vLabel}
         </div>
         </div>
@@ -850,6 +950,13 @@ function viewProduct(index) {
   document.getElementById('reviewCount').value = p.reviewCount || '';
   document.getElementById('rating').value = p.rating || '';
   document.getElementById('cost1688').value = p.cost1688 || '';
+  document.getElementById('targetMargin').value = p.targetMargin || '15';
+  document.getElementById('weightKg').value = p.weightKg || '';
+  document.getElementById('tcRate').value = p.tcRate || '30';
+  document.getElementById('fbaFee').value = p.fbaFee || '';
+  document.getElementById('vatCountry').value = p.vatCountry || 'DE';
+  document.getElementById('hl').value = p.hl || '7.3';
+  setProdType(p.prodType || 'gongmo');
   document.getElementById('negativeReviews').value = p.negativeReviews || '';
   if (p.adCostType) {
     document.getElementById('adType').value = p.adCostType;
@@ -998,6 +1105,16 @@ function clearImage() {
   document.getElementById('imageFile').value = '';
 }
 
+// 定制/公模切换
+let currentProdType = 'gongmo';
+function setProdType(t) {
+  currentProdType = t;
+  document.getElementById('typeGongmo').classList.toggle('active', t === 'gongmo');
+  document.getElementById('typeDingzhi').classList.toggle('active', t === 'dingzhi');
+  document.getElementById('costGroup').style.display = t === 'gongmo' ? 'block' : 'none';
+  document.getElementById('targetMarginGroup').style.display = t === 'dingzhi' ? 'block' : 'none';
+}
+
 // Ad cost input toggle
 function toggleAdInput() {
   const type = document.getElementById('adType').value;
@@ -1005,7 +1122,7 @@ function toggleAdInput() {
   const hint = document.getElementById('adHint');
   input.style.display = type ? 'block' : 'none';
   if (type === 'acos') { input.placeholder = '15'; hint.textContent = 'ACoS = 广告支出 ÷ 销售额 × 100%，建议填15-30'; }
-  else if (type === 'cpc') { input.placeholder = '1.50'; hint.textContent = 'CPC = 单次点击成本（美元），建议填1-3'; }
+  else if (type === 'cpc') { input.placeholder = '1.50'; hint.textContent = 'CPC = 单次点击成本（欧元），建议填1-3'; }
   else hint.textContent = '';
 }
 
@@ -1030,27 +1147,32 @@ function addCompetitor() {
       <input class="comp-name" placeholder="例：类似产品名">
     </div></div>
     <div class="row-3">
-      <div class="form-group"><label>售价 ($)</label><input class="comp-price" type="number" step="0.01" placeholder="15.99"></div>
-      <div class="form-group"><label>月销量</label><input class="comp-sales" type="number" placeholder="1500"></div>
-      <div class="form-group"><label>评论数</label><input class="comp-reviews" type="number" placeholder="80"></div>
+      <div class="form-group"><label>售价 (€)</label><input class="comp-price" type="number" step="0.01" placeholder="9.99"></div>
+      <div class="form-group"><label>月销量</label><input class="comp-sales" type="number" placeholder="1200"></div>
+      <div class="form-group"><label>评论数</label><input class="comp-reviews" type="number" placeholder="60"></div>
     </div>
-    <div class="row">
-      <div class="form-group"><label>评分</label><input class="comp-rating" type="number" step="0.1" min="1" max="5" placeholder="4.2"></div>
-      <div class="form-group"><label>1688成本 (¥)</label><input class="comp-cost" type="number" step="0.01" placeholder="8.50"></div>
+    <div class="row-3">
+      <div class="form-group"><label>评分</label><input class="comp-rating" type="number" step="0.1" min="1" max="5" placeholder="4.0"></div>
+      <div class="form-group"><label>重量 (KG)</label><input class="comp-weight" type="number" step="0.01" placeholder="0.10"></div>
+      <div class="form-group"><label>配送费 (€)</label><input class="comp-fba" type="number" step="0.01" placeholder="2.50"></div>
     </div>
+    <div class="row"><div class="form-group">
+      <label>1688成本 (¥)</label><input class="comp-cost" type="number" step="0.01" placeholder="8.50">
+    </div></div>
   `;
   body.appendChild(card);
 }
 
-// Manual verdict override
+// 我的判断（手动标记，覆盖自动暂缓）
 function overrideVerdict(id, newVerdict) {
   const products = loadProducts();
   const p = products.find(p => (p.asin || p.productName) === id);
   if (!p) return;
-  p.manualVerdict = newVerdict === p.result.verdict ? null : newVerdict;
+  p.manualVerdict = newVerdict === p.manualVerdict ? null : newVerdict;
+  p.autoVerdict = false;
   saveProducts(products);
   renderReport(p, p.result);
-  showToast('判断已更新');
+  showToast('已记录你的判断');
 }
 
 function saveOverrideNote(id, note) {
@@ -1091,17 +1213,12 @@ function renderStats() {
   if (!products.length) { panel.innerHTML = ''; return; }
 
   const total = products.length;
-  const goCount = products.filter(p => {
-    const v = (p.manualVerdict || p.result?.verdict || '');
-    return v === '能做';
-  }).length;
-  const waitCount = products.filter(p => {
-    const v = (p.manualVerdict || p.result?.verdict || '');
-    return v === '暂缓';
-  }).length;
-  const skipCount = total - goCount - waitCount;
+  const goCount = products.filter(p => p.manualVerdict === '能做').length;
+  const waitCount = products.filter(p => p.manualVerdict === '暂缓').length;
+  const skipCount = products.filter(p => p.manualVerdict === '不做').length;
+  const noneCount = total - goCount - waitCount - skipCount;
 
-  const margins = products.map(p => parseFloat(p.result?.grossMargin) || 0).filter(m => m > 0);
+  const margins = products.map(p => parseFloat(p.result?.profit?.ml2) || 0).filter(m => m > 0);
   const avgMargin = margins.length ? (margins.reduce((a,b)=>a+b,0) / margins.length).toFixed(1) : '—';
 
   const dates = products.map(p => p.createdAt).filter(Boolean).sort();
@@ -1109,7 +1226,8 @@ function renderStats() {
 
   const goPct = total > 0 ? Math.round(goCount/total*100) : 0;
   const waitPct = total > 0 ? Math.round(waitCount/total*100) : 0;
-  const skipPct = total - goPct - waitPct;
+  const skipPct = total > 0 ? Math.round(skipCount/total*100) : 0;
+  const nonePct = Math.max(0, 100 - goPct - waitPct - skipPct);
 
   panel.innerHTML = `
     <div class="stats-grid">
@@ -1117,13 +1235,14 @@ function renderStats() {
       <div class="stat-card"><div class="stat-value" style="color:var(--accent);">${avgMargin}%</div><div class="stat-label">📈 平均毛利率</div></div>
       <div class="stat-card">
         <div class="stat-value" style="font-size:14px;">
-          <span style="color:var(--green);">✅${goCount}</span> <span style="color:var(--yellow);">⏸${waitCount}</span> <span style="color:var(--red);">🚫${skipCount}</span>
+          <span style="color:var(--green);">✅${goCount}</span> <span style="color:var(--yellow);">⏸${waitCount}</span> <span style="color:var(--red);">🚫${skipCount}</span> <span style="color:var(--muted);">⚪${noneCount}</span>
         </div>
-        <div class="stat-label">能做 / 暂缓 / 不做</div>
+        <div class="stat-label">我的判断 · 能做/暂缓/不做/未标</div>
         <div class="stat-bar">
           <div class="seg go" style="width:${goPct}%;"></div>
           <div class="seg wait" style="width:${waitPct}%;"></div>
           <div class="seg skip" style="width:${skipPct}%;"></div>
+          <div class="seg none" style="width:${nonePct}%;"></div>
         </div>
       </div>
       <div class="stat-card"><div class="stat-value" style="font-size:16px;">${latest}</div><div class="stat-label">🕐 最近分析</div></div>
@@ -1280,14 +1399,18 @@ function escapeHtml(str) {
   // Pre-fill demo data only if no data exists
   var hasData = loadProducts().length > 0;
   if (!hasData) {
-    document.getElementById('productName').value = 'Sage Green Kitchen Towels Set of 2（鼠尾草绿厨房毛巾 2件装）';
-    document.getElementById('asin').value = 'B0GCFJGVFG';
-    document.getElementById('price').value = '17.99';
-    document.getElementById('monthlySales').value = '2010';
-    document.getElementById('reviewCount').value = '26';
+    document.getElementById('productName').value = '贺卡 Greeting Cards Set（示例：德国站）';
+    document.getElementById('asin').value = 'B0DEMO001';
+    document.getElementById('price').value = '10.99';
+    document.getElementById('monthlySales').value = '850';
+    document.getElementById('reviewCount').value = '38';
     document.getElementById('rating').value = '3.9';
-    document.getElementById('cost1688').value = '10.50';
-    document.getElementById('negativeReviews').value = '面料太薄，吸水性差\n颜色跟图片不一样，实物偏暗\n太薄了不值这个价\n当装饰还行，吸水真的不行\n好看是好看，质量一般\n有点薄，当抹布都不吸水\n颜色好看但布料太透了\n吸水性不如普通洗碗巾';
+    document.getElementById('cost1688').value = '10.80';
+    document.getElementById('weightKg').value = '0.08';
+    document.getElementById('tcRate').value = '30';
+    document.getElementById('fbaFee').value = '2.54';
+    document.getElementById('hl').value = '7.3';
+    document.getElementById('negativeReviews').value = '卡片太薄，容易弯折\n颜色跟图片不一样，实物偏暗\n印刷质量一般，有点模糊\n包装太差，到货压坏了\n图案好看，但纸张偏薄\n尺寸比想象的小\n质量不值这个价';
   }
 
   // Auto-pull from cloud on page load (free, no token needed)
