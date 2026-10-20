@@ -311,12 +311,12 @@
   <div class="group-title">🛒 产品信息</div>
   <div class="form-group">
     <label>产品名称 <span class="req">*</span></label>
-    <input id="productName" placeholder="例：Sage Green Kitchen Towels Set of 2">
+    <input id="productName" placeholder="例：Greeting Cards Set of 2（贺卡2件装）">
   </div>
   <div class="row">
     <div class="form-group">
       <label>ASIN</label>
-      <input id="asin" placeholder="B0GCFJGVFG">
+      <input id="asin" placeholder="B0XXXXXXXX">
     </div>
     <div class="form-group">
       <label>重量 <span class="unit">(KG)</span> <span class="req">*</span></label>
@@ -363,7 +363,7 @@
   </div>
   <div class="form-group">
     <label>差评内容 <span class="unit">(每条一行，粘贴关键词或原文)</span></label>
-    <textarea id="negativeReviews" placeholder="面料太薄，吸水性差&#10;颜色跟图片不一样&#10;太薄了不值这个价&#10;当装饰还行，吸水不行"></textarea>
+    <textarea id="negativeReviews" placeholder="例：卡片太薄，容易弯折&#10;颜色跟图片不一样，实物偏暗&#10;包装太差，到货压坏了&#10;尺寸比想象的小"></textarea>
   </div>
 
   <div class="collapsible" id="costParamSection">
@@ -1371,24 +1371,7 @@ function escapeHtml(str) {
 
 // ==================== INIT ====================
 (function init() {
-  // Pre-fill demo data only if no data exists
-  var hasData = loadProducts().length > 0;
-  if (!hasData) {
-    document.getElementById('productName').value = '贺卡 Greeting Cards Set（示例：德国站）';
-    document.getElementById('asin').value = 'B0DEMO001';
-    document.getElementById('price').value = '10.99';
-    document.getElementById('monthlySales').value = '850';
-    document.getElementById('reviewCount').value = '38';
-    document.getElementById('rating').value = '3.9';
-    document.getElementById('rank').value = '12';
-    document.getElementById('cost1688').value = '10.80';
-    document.getElementById('weightKg').value = '0.08';
-    document.getElementById('tcRate').value = '30';
-    document.getElementById('fbaFee').value = '2.54';
-    document.getElementById('hl').value = '7.3';
-    document.getElementById('negativeReviews').value = '卡片太薄，容易弯折\n颜色跟图片不一样，实物偏暗\n印刷质量一般，有点模糊\n包装太差，到货压坏了\n图案好看，但纸张偏薄\n尺寸比想象的小\n质量不值这个价';
-  }
-
+  // 表单不再预填示例数据——示例都在各字段的灰色提示（placeholder）里
   // Auto-pull from cloud on page load (free, no token needed)
   autoPullFromCloud();
 })();
