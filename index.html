@@ -124,6 +124,19 @@
   .ceiling-box .big { font-size: 22px; font-weight: 800; color: var(--yellow); }
   .seg.none { background: var(--border); }
 
+  /* 字段分组标题 */
+  .group-title {
+    font-size: 13px; font-weight: 700; color: var(--accent);
+    margin: 20px 0 10px; letter-spacing: 0.5px;
+    display: flex; align-items: center; gap: 8px;
+  }
+  .group-title::after { content: ''; flex: 1; height: 1px; background: var(--border); }
+  .req { color: var(--red); font-weight: 700; }
+
+  /* 悬浮生成按钮 */
+  .generate-sticky { position: sticky; bottom: 12px; z-index: 10; padding: 8px 0; }
+  .generate-sticky .btn-primary { box-shadow: 0 4px 20px rgba(56,189,248,0.35); }
+
   .metric-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; margin-bottom: 14px; }
   .metric {
     text-align: center; padding: 10px 6px; border-radius: 8px;
@@ -184,12 +197,6 @@
 
   /* File input */
   #importFile { display: none; }
-
-  /* Ad row */
-  .ad-row { display: flex; gap: 8px; align-items: flex-end; }
-  .ad-row select { width: 130px; flex-shrink: 0; padding: 10px 8px; border-radius: 8px; border: 1px solid var(--border); background: var(--input-bg); color: var(--text); font-size: 14px; font-family: inherit; }
-  .ad-row input { flex: 1; }
-  .ad-hint { font-size: 11px; color: var(--muted); margin-top: 4px; }
 
   /* Competitor section */
   .collapsible { margin-bottom: 14px; }
@@ -285,8 +292,6 @@
     .card-header { flex-direction: column; }
     .verdict { margin-left: 0; margin-top: 8px; align-self: flex-start; }
     .stats-grid { grid-template-columns: 1fr 1fr; }
-    .ad-row { flex-direction: column; align-items: stretch; }
-    .ad-row select { width: 100%; }
   }
 </style>
 </head>
@@ -303,13 +308,20 @@
 <!-- ====== Analyze Panel ====== -->
 <div class="panel active" id="panel-analyze">
 
+  <div class="group-title">🛒 产品信息</div>
   <div class="form-group">
-    <label>产品名称</label>
+    <label>产品名称 <span class="req">*</span></label>
     <input id="productName" placeholder="例：Sage Green Kitchen Towels Set of 2">
   </div>
-  <div class="form-group">
-    <label>ASIN</label>
-    <input id="asin" placeholder="B0GCFJGVFG">
+  <div class="row">
+    <div class="form-group">
+      <label>ASIN</label>
+      <input id="asin" placeholder="B0GCFJGVFG">
+    </div>
+    <div class="form-group">
+      <label>重量 <span class="unit">(KG)</span> <span class="req">*</span></label>
+      <input id="weightKg" type="number" step="0.01" placeholder="0.08">
+    </div>
   </div>
   <div class="form-group">
     <label>产品主图 <span class="unit">(选填)</span></label>
@@ -323,9 +335,11 @@
       <button class="clear-img" onclick="clearImage()" type="button">✕</button>
     </div>
   </div>
+
+  <div class="group-title">📊 市场数据</div>
   <div class="row-3">
     <div class="form-group">
-      <label>售价 <span class="unit">(€)</span></label>
+      <label>售价 <span class="unit">(€)</span> <span class="req">*</span></label>
       <input id="price" type="number" step="0.01" placeholder="10.99">
     </div>
     <div class="form-group">
@@ -343,65 +357,61 @@
       <input id="rating" type="number" step="0.1" min="1" max="5" placeholder="3.9">
     </div>
     <div class="form-group">
-      <label>FBA配送费 <span class="unit">(€ 必填)</span></label>
-      <input id="fbaFee" type="number" step="0.01" placeholder="2.54">
+      <label>小类排名</label>
+      <input id="rank" type="number" placeholder="12">
     </div>
-  </div>
-  <div class="form-group">
-    <label>是否定制</label>
-    <div class="type-toggle">
-      <button type="button" id="typeGongmo" class="active" onclick="setProdType('gongmo')">公模 · 成本已知</button>
-      <button type="button" id="typeDingzhi" onclick="setProdType('dingzhi')">定制 · 成本未定</button>
-    </div>
-  </div>
-  <div class="form-group" id="costGroup">
-    <label>1688采购成本 <span class="unit">(¥ 人民币)</span></label>
-    <input id="cost1688" type="number" step="0.01" placeholder="10.80">
-  </div>
-  <div class="form-group" id="targetMarginGroup" style="display:none;">
-    <label>目标利润率 <span class="unit">(%) · 成本红线按此反推</span></label>
-    <input id="targetMargin" type="number" step="1" value="15" placeholder="15">
-  </div>
-  <div class="row">
-    <div class="form-group">
-      <label>重量 <span class="unit">(KG)</span></label>
-      <input id="weightKg" type="number" step="0.01" placeholder="0.08">
-    </div>
-    <div class="form-group">
-      <label>头程单价 <span class="unit">(¥/kg)</span></label>
-      <input id="tcRate" type="number" step="0.1" value="30" placeholder="30">
-    </div>
-  </div>
-  <div class="row">
-    <div class="form-group">
-      <label>增值税税点</label>
-      <select id="vatCountry">
-        <option value="DE" selected>德国 19%</option>
-        <option value="FR">法国 20%</option>
-        <option value="IT">意大利 22%</option>
-        <option value="ES">西班牙 21%</option>
-      </select>
-    </div>
-    <div class="form-group">
-      <label>汇率 <span class="unit">(€→¥)</span></label>
-      <input id="hl" type="number" step="0.01" value="7.3" placeholder="7.3">
-    </div>
-  </div>
-  <div class="form-group">
-    <label>广告成本 <span class="unit">(选填)</span></label>
-    <div class="ad-row">
-      <select id="adType" onchange="toggleAdInput()">
-        <option value="">不投广告</option>
-        <option value="acos">ACoS (%)</option>
-        <option value="cpc">CPC (€)</option>
-      </select>
-      <input id="adValue" type="number" step="0.1" placeholder="15" style="display:none">
-    </div>
-    <div class="ad-hint" id="adHint"></div>
   </div>
   <div class="form-group">
     <label>差评内容 <span class="unit">(每条一行，粘贴关键词或原文)</span></label>
     <textarea id="negativeReviews" placeholder="面料太薄，吸水性差&#10;颜色跟图片不一样&#10;太薄了不值这个价&#10;当装饰还行，吸水不行"></textarea>
+  </div>
+
+  <div class="collapsible" id="costParamSection">
+    <div class="collapsible-trigger" onclick="toggleCostParams()">
+      <span class="arrow">▶</span> 💰 成本与参数 <span style="font-size:11px;color:var(--muted)">(定制/成本/税点/汇率)</span>
+    </div>
+    <div class="collapsible-body" id="costParamBody">
+      <div class="form-group">
+        <label>是否定制</label>
+        <div class="type-toggle">
+          <button type="button" id="typeGongmo" class="active" onclick="setProdType('gongmo')">公模 · 成本已知</button>
+          <button type="button" id="typeDingzhi" onclick="setProdType('dingzhi')">定制 · 成本未定</button>
+        </div>
+      </div>
+      <div class="form-group" id="costGroup">
+        <label>1688采购成本 <span class="unit">(¥ 人民币)</span> <span class="req">*</span></label>
+        <input id="cost1688" type="number" step="0.01" placeholder="10.80">
+      </div>
+      <div class="form-group" id="targetMarginGroup" style="display:none;">
+        <label>目标利润率 <span class="unit">(%) · 成本红线按此反推</span></label>
+        <input id="targetMargin" type="number" step="1" value="15" placeholder="15">
+      </div>
+      <div class="row">
+        <div class="form-group">
+          <label>FBA配送费 <span class="unit">(€)</span> <span class="req">*</span></label>
+          <input id="fbaFee" type="number" step="0.01" placeholder="2.54">
+        </div>
+        <div class="form-group">
+          <label>头程单价 <span class="unit">(¥/kg)</span></label>
+          <input id="tcRate" type="number" step="0.1" value="30" placeholder="30">
+        </div>
+      </div>
+      <div class="row">
+        <div class="form-group">
+          <label>增值税税点</label>
+          <select id="vatCountry">
+            <option value="DE" selected>德国 19%</option>
+            <option value="FR">法国 20%</option>
+            <option value="IT">意大利 22%</option>
+            <option value="ES">西班牙 21%</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>汇率 <span class="unit">(€→¥)</span></label>
+          <input id="hl" type="number" step="0.01" value="7.3" placeholder="7.3">
+        </div>
+      </div>
+    </div>
   </div>
 
   <!-- Competitor comparison -->
@@ -412,7 +422,9 @@
     <div class="collapsible-body" id="competitorBody"></div>
   </div>
 
-  <button class="btn btn-primary" onclick="generateReport()">⚡ 生成分析报告</button>
+  <div class="generate-sticky">
+    <button class="btn btn-primary" onclick="generateReport()">⚡ 生成分析报告</button>
+  </div>
 
   <!-- Report output -->
   <div id="reportOutput" style="margin-top: 20px;"></div>
@@ -513,14 +525,6 @@ function analyzeProduct(data) {
     const promoPrice30 = (cb + fbaFee + 0.5) / (1 - 0.05 - COMMISSION - 0.95 * vat / (1 + vat) - BM);
     const refBid = ml / 10;
 
-    const adCostType = data.adCostType || null;
-    const adCostValue = parseFloat(data.adCostValue) || 0;
-    let adSpend = 0;
-    if (adCostType === 'acos' && adCostValue > 0) { adSpend = price * (adCostValue / 100); }
-    if (adCostType === 'cpc' && adCostValue > 0) { adSpend = adCostValue; }
-    const netProfit = ml - adSpend;
-    const netMargin = price > 0 ? netProfit / price : 0;
-
     profit = {
       tu: tu.toFixed(2), cb: cb.toFixed(2), referralFee: referralFee.toFixed(2),
       vatAmount: vatAmount.toFixed(2), vatPct: Math.round(vat * 100),
@@ -528,8 +532,6 @@ function analyzeProduct(data) {
       hb: hb.toFixed(1), hb2: hb2.toFixed(2),
       floorPrice: floorPrice.toFixed(2), floorAcos: (floorAcos * 100).toFixed(1),
       promoPrice30: promoPrice30.toFixed(2), refBid: refBid.toFixed(2),
-      adCostType, adCostValue, adSpend: adSpend.toFixed(2),
-      netProfit: netProfit.toFixed(2), netMargin: (netMargin * 100).toFixed(1),
     };
   }
 
@@ -616,6 +618,7 @@ function generateReport() {
     monthlySales: document.getElementById('monthlySales').value,
     reviewCount: document.getElementById('reviewCount').value,
     rating: document.getElementById('rating').value,
+    rank: document.getElementById('rank').value,
     prodType: currentProdType,
     cost1688: currentProdType === 'gongmo' ? document.getElementById('cost1688').value : '',
     targetMargin: document.getElementById('targetMargin').value,
@@ -625,15 +628,21 @@ function generateReport() {
     vatCountry: document.getElementById('vatCountry').value,
     hl: document.getElementById('hl').value,
     negativeReviews: document.getElementById('negativeReviews').value,
-    adCostType: document.getElementById('adType').value || null,
-    adCostValue: document.getElementById('adValue').value || null,
   };
 
   if (!data.productName) { showToast('⚠️ 请至少填写产品名称'); return; }
   if (!data.price) { showToast('⚠️ 售价为必填项'); return; }
-  if (!data.fbaFee) { showToast('⚠️ FBA配送费为必填项'); return; }
   if (!data.weightKg) { showToast('⚠️ 重量为必填项（算头程运费用）'); return; }
-  if (data.prodType === 'gongmo' && !data.cost1688) { showToast('⚠️ 公模产品需填写1688采购成本'); return; }
+  if (!data.fbaFee) {
+    document.getElementById('costParamSection').classList.add('open');
+    showToast('⚠️ 请在「成本与参数」里填写FBA配送费');
+    return;
+  }
+  if (data.prodType === 'gongmo' && !data.cost1688) {
+    document.getElementById('costParamSection').classList.add('open');
+    showToast('⚠️ 公模产品需填写1688采购成本');
+    return;
+  }
 
   const r = analyzeProduct(data);
 
@@ -717,10 +726,8 @@ function renderReport(data, r) {
   // Metric tiles
   let profitTile;
   if (p) {
-    const useNet = parseFloat(p.adSpend) > 0;
-    const mVal = useNet ? p.netMargin : p.ml2;
-    const mColor = parseFloat(mVal) >= 15 ? 'green' : parseFloat(mVal) >= 10 ? 'yellow' : 'red';
-    profitTile = `<div class="metric"><div class="value ${mColor}">${mVal}%</div><div class="label">利润率 · 利润€${p.ml}</div></div>`;
+    const mColor = parseFloat(p.ml2) >= 15 ? 'green' : parseFloat(p.ml2) >= 10 ? 'yellow' : 'red';
+    profitTile = `<div class="metric"><div class="value ${mColor}">${p.ml2}%</div><div class="label">利润率 · 利润€${p.ml}</div></div>`;
   } else if (r.costCeiling) {
     profitTile = r.costCeiling.ok
       ? `<div class="metric"><div class="value yellow">¥${r.costCeiling.value}</div><div class="label">打样成本上限</div></div>`
@@ -729,73 +736,54 @@ function renderReport(data, r) {
     profitTile = `<div class="metric"><div class="value">—</div><div class="label">利润待核算</div></div>`;
   }
 
-  const costTile = r.costCNY > 0
-    ? `<div class="metric"><div class="value">≈¥${r.costCNY.toFixed(2)}</div><div class="label">1688成本</div></div>`
-    : `<div class="metric"><div class="value">待打样</div><div class="label">1688成本</div></div>`;
+  const rankTile = `<div class="metric"><div class="value">${data.rank ? '#' + data.rank : '—'}</div><div class="label">小类排名</div></div>`;
 
   // Profit breakdown
   let profitHtml = '';
   if (p) {
-    const adRows = parseFloat(p.adSpend) > 0 ? `
-      <tr>
-        <td style="padding:3px 0;color:var(--muted);">➖ 广告费 (${p.adCostType === 'acos' ? 'ACoS ' + p.adCostValue + '%' : 'CPC €' + parseFloat(p.adCostValue).toFixed(2)})</td>
-        <td style="text-align:right;color:var(--red);">−€${p.adSpend}</td>
-      </tr>
-    ` : '';
-    const netRows = parseFloat(p.adSpend) > 0 ? `
-      <tr style="border-top:2px solid var(--accent);">
-        <td style="padding:6px 0;font-weight:800;font-size:15px;">💰 净利 / 单</td>
-        <td style="text-align:right;font-weight:800;font-size:15px;color:${parseFloat(p.netProfit) >= 0 ? 'var(--green)' : 'var(--red)'};">€${p.netProfit}</td>
-      </tr>
-      <tr>
-        <td style="padding:3px 0;color:var(--muted);">📊 净利率</td>
-        <td style="text-align:right;font-weight:700;color:var(--accent);">${p.netMargin}%</td>
-      </tr>
-    ` : `
-      <tr style="border-top:2px solid var(--accent);">
-        <td style="padding:6px 0;font-weight:800;font-size:15px;">💰 利润 / 单</td>
-        <td style="text-align:right;font-weight:800;font-size:15px;color:var(--green);">€${p.ml}</td>
-      </tr>
-      <tr>
-        <td style="padding:3px 0;color:var(--muted);">📊 利润率</td>
-        <td style="text-align:right;font-weight:700;color:var(--accent);">${p.ml2}%</td>
-      </tr>
-    `;
     profitHtml = `
-      <div class="section-title">💰 利润拆解（€）</div>
-      <div style="font-size:13px;line-height:2.2;padding:8px 0;">
-        <table style="width:100%;border-collapse:collapse;color:var(--text);">
-          <tr>
-            <td style="padding:3px 0;color:var(--muted);">售价（Amazon）</td>
-            <td style="text-align:right;font-weight:700;">€${r.price.toFixed(2)}</td>
-          </tr>
-          <tr>
-            <td style="padding:3px 0;color:var(--muted);">➖ 佣金（15.4%）</td>
-            <td style="text-align:right;color:var(--red);">−€${p.referralFee}</td>
-          </tr>
-          <tr>
-            <td style="padding:3px 0;color:var(--muted);">➖ 采购+头程（¥${p.tu} ÷ ${r.hl}）</td>
-            <td style="text-align:right;color:var(--red);">−€${p.cb}</td>
-          </tr>
-          <tr>
-            <td style="padding:3px 0;color:var(--muted);">➖ FBA配送费</td>
-            <td style="text-align:right;color:var(--red);">−€${r.fbaFee.toFixed(2)}</td>
-          </tr>
-          <tr style="border-bottom:1px dashed var(--border);">
-            <td style="padding:3px 0;color:var(--muted);">➖ 增值税（${p.vatPct}%）</td>
-            <td style="text-align:right;color:var(--red);">−€${p.vatAmount}</td>
-          </tr>
-          ${adRows}
-          ${netRows}
-        </table>
-      </div>
-      <div class="ml2-grid">
-        <div class="ml2-item"><span class="k">人民币毛利</span><span class="v">¥${p.hb}</span></div>
-        <div class="ml2-item"><span class="k">成本回报倍数</span><span class="v">${p.hb2}倍</span></div>
-        <div class="ml2-item"><span class="k">保底价格</span><span class="v">€${p.floorPrice}</span></div>
-        <div class="ml2-item"><span class="k">30%ACOS促销价</span><span class="v">€${p.promoPrice30}</span></div>
-        <div class="ml2-item"><span class="k">保底价促销ACOS</span><span class="v">${p.floorAcos}%</span></div>
-        <div class="ml2-item"><span class="k">参考广告出价</span><span class="v">€${p.refBid}</span></div>
+      <div class="collapsible open">
+        <div class="collapsible-trigger" onclick="this.parentElement.classList.toggle('open')">
+          <span class="arrow">▶</span> 💰 利润拆解（€）· 利润率 ${p.ml2}%
+        </div>
+        <div class="collapsible-body">
+        <div style="font-size:13px;line-height:2.2;padding:8px 0;">
+          <table style="width:100%;border-collapse:collapse;color:var(--text);">
+            <tr>
+              <td style="padding:3px 0;color:var(--muted);">售价（Amazon）</td>
+              <td style="text-align:right;font-weight:700;">€${r.price.toFixed(2)}</td>
+            </tr>
+            <tr>
+              <td style="padding:3px 0;color:var(--muted);">➖ 佣金（15.4%）</td>
+              <td style="text-align:right;color:var(--red);">−€${p.referralFee}</td>
+            </tr>
+            <tr>
+              <td style="padding:3px 0;color:var(--muted);">➖ 采购+头程（¥${p.tu} ÷ ${r.hl}）</td>
+              <td style="text-align:right;color:var(--red);">−€${p.cb}</td>
+            </tr>
+            <tr>
+              <td style="padding:3px 0;color:var(--muted);">➖ FBA配送费</td>
+              <td style="text-align:right;color:var(--red);">−€${r.fbaFee.toFixed(2)}</td>
+            </tr>
+            <tr style="border-bottom:1px dashed var(--border);">
+              <td style="padding:3px 0;color:var(--muted);">➖ 增值税（${p.vatPct}%）</td>
+              <td style="text-align:right;color:var(--red);">−€${p.vatAmount}</td>
+            </tr>
+            <tr>
+              <td style="padding:6px 0;font-weight:800;font-size:15px;">💰 利润 / 单</td>
+              <td style="text-align:right;font-weight:800;font-size:15px;color:var(--green);">€${p.ml}</td>
+            </tr>
+          </table>
+        </div>
+        <div class="ml2-grid">
+          <div class="ml2-item"><span class="k">人民币毛利</span><span class="v">¥${p.hb}</span></div>
+          <div class="ml2-item"><span class="k">成本回报倍数</span><span class="v">${p.hb2}倍</span></div>
+          <div class="ml2-item"><span class="k">保底价格</span><span class="v">€${p.floorPrice}</span></div>
+          <div class="ml2-item"><span class="k">30%ACOS促销价</span><span class="v">€${p.promoPrice30}</span></div>
+          <div class="ml2-item"><span class="k">保底价促销ACOS</span><span class="v">${p.floorAcos}%</span></div>
+          <div class="ml2-item"><span class="k">参考广告出价</span><span class="v">€${p.refBid}</span></div>
+        </div>
+        </div>
       </div>
     `;
   } else {
@@ -862,7 +850,7 @@ function renderReport(data, r) {
           <div class="value">€${r.price.toFixed(2)}</div>
           <div class="label">售价</div>
         </div>
-        ${costTile}
+        ${rankTile}
       </div>
 
       ${profitHtml}
@@ -949,6 +937,7 @@ function viewProduct(index) {
   document.getElementById('monthlySales').value = p.monthlySales || '';
   document.getElementById('reviewCount').value = p.reviewCount || '';
   document.getElementById('rating').value = p.rating || '';
+  document.getElementById('rank').value = p.rank || '';
   document.getElementById('cost1688').value = p.cost1688 || '';
   document.getElementById('targetMargin').value = p.targetMargin || '15';
   document.getElementById('weightKg').value = p.weightKg || '';
@@ -958,14 +947,6 @@ function viewProduct(index) {
   document.getElementById('hl').value = p.hl || '7.3';
   setProdType(p.prodType || 'gongmo');
   document.getElementById('negativeReviews').value = p.negativeReviews || '';
-  if (p.adCostType) {
-    document.getElementById('adType').value = p.adCostType;
-    toggleAdInput();
-    document.getElementById('adValue').value = p.adCostValue || '';
-  } else {
-    document.getElementById('adType').value = '';
-    document.getElementById('adValue').style.display = 'none';
-  }
 
   // Restore image (set input FIRST to avoid oninput triggering clearImage)
   if (p.imageData) {
@@ -1115,15 +1096,9 @@ function setProdType(t) {
   document.getElementById('targetMarginGroup').style.display = t === 'dingzhi' ? 'block' : 'none';
 }
 
-// Ad cost input toggle
-function toggleAdInput() {
-  const type = document.getElementById('adType').value;
-  const input = document.getElementById('adValue');
-  const hint = document.getElementById('adHint');
-  input.style.display = type ? 'block' : 'none';
-  if (type === 'acos') { input.placeholder = '15'; hint.textContent = 'ACoS = 广告支出 ÷ 销售额 × 100%，建议填15-30'; }
-  else if (type === 'cpc') { input.placeholder = '1.50'; hint.textContent = 'CPC = 单次点击成本（欧元），建议填1-3'; }
-  else hint.textContent = '';
+// 成本参数折叠区
+function toggleCostParams() {
+  document.getElementById('costParamSection').classList.toggle('open');
 }
 
 // Competitor toggle
@@ -1405,6 +1380,7 @@ function escapeHtml(str) {
     document.getElementById('monthlySales').value = '850';
     document.getElementById('reviewCount').value = '38';
     document.getElementById('rating').value = '3.9';
+    document.getElementById('rank').value = '12';
     document.getElementById('cost1688').value = '10.80';
     document.getElementById('weightKg').value = '0.08';
     document.getElementById('tcRate').value = '30';
