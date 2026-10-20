@@ -383,8 +383,8 @@
         <input id="cost1688" type="number" step="0.01" placeholder="10.80">
       </div>
       <div class="form-group" id="targetMarginGroup" style="display:none;">
-        <label>目标利润率 <span class="unit">(%) · 成本红线按此反推</span></label>
-        <input id="targetMargin" type="number" step="1" value="15" placeholder="15">
+        <label>目标利润率 <span class="unit">(%) · ML2达标线，默认30</span></label>
+        <input id="targetMargin" type="number" step="1" value="30" placeholder="30">
       </div>
       <div class="row">
         <div class="form-group">
@@ -492,7 +492,7 @@ function analyzeProduct(data) {
   const fbaFee = parseFloat(data.fbaFee) || 0;
   const vat = VAT_RATES[data.vatCountry] || 0.19;
   const prodType = data.prodType || 'gongmo';
-  const targetMargin = (parseFloat(data.targetMargin) || 15) / 100;
+  const targetMargin = (parseFloat(data.targetMargin) || 30) / 100;
 
   const BM = 0.22;          // 仓储+杂费扣点（ML2表德法口径）
   const COMMISSION = 0.154; // 平台佣金 15.4%
@@ -794,7 +794,7 @@ function renderReport(data, r) {
         ⚠️ 定制产品 · 成本未定，利润暂不核算<br>
         ${ceil && ceil.ok
           ? `<span class="big">¥${ceil.value}</span>　← 打样询价成本上限<br><span style="font-size:12px;color:var(--muted);">按目标利润率 ${ceil.targetPct}% 反推，报价超过这个数利润率就不达标</span>`
-          : `<span style="color:var(--red);">当前售价即使零成本也达不到 ${ceil ? ceil.targetPct : 15}% 目标利润率，建议提高售价或降低预期</span>`}
+          : `<span style="color:var(--red);">当前售价即使零成本也达不到 ${ceil ? ceil.targetPct : 30}% 目标利润率，建议提高售价或降低预期</span>`}
         <br><span style="font-size:12px;color:var(--muted);">打样报价后，切回「公模」填入成本即可出全套利润</span>
       </div>
     `;
@@ -939,7 +939,7 @@ function viewProduct(index) {
   document.getElementById('rating').value = p.rating || '';
   document.getElementById('rank').value = p.rank || '';
   document.getElementById('cost1688').value = p.cost1688 || '';
-  document.getElementById('targetMargin').value = p.targetMargin || '15';
+  document.getElementById('targetMargin').value = p.targetMargin || '30';
   document.getElementById('weightKg').value = p.weightKg || '';
   document.getElementById('tcRate').value = p.tcRate || '30';
   document.getElementById('fbaFee').value = p.fbaFee || '';
