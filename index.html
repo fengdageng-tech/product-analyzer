@@ -320,8 +320,20 @@
     </div>
     <div class="form-group">
       <label>重量 <span class="unit">(KG)</span> <span class="req">*</span></label>
-      <input id="weightKg" type="number" step="0.01" placeholder="0.08">
+      <input id="weightKg" type="number" step="0.01" placeholder="0.08" oninput="autoFillFba()">
     </div>
+  </div>
+  <div class="form-group">
+    <label>尺寸级别 <span class="unit">(决定配送费档位)</span></label>
+    <select id="sizeTier" onchange="autoFillFba()">
+      <option value="小包裹" selected>小包裹 · ≤35×25×12cm（≤3.9kg）</option>
+      <option value="标准包裹">标准包裹 · ≤45×34×26cm（≤11.9kg）</option>
+      <option value="轻型信封">轻型信封 · ≤33×23×2.5cm（≤100克）</option>
+      <option value="标准信封">标准信封 · ≤33×23×2.5cm（≤460克）</option>
+      <option value="大信封">大信封 · ≤33×23×4cm（≤960克）</option>
+      <option value="超大信封">超大信封 · ≤33×23×6cm（≤960克）</option>
+    </select>
+    <div class="ad-hint" id="tierHint" style="font-size:11px;color:var(--accent);margin-top:4px;"></div>
   </div>
   <div class="form-group">
     <label>产品主图 <span class="unit">(选填)</span></label>
@@ -388,18 +400,25 @@
       </div>
       <div class="row">
         <div class="form-group">
-          <label>FBA配送费 <span class="unit">(€)</span> <span class="req">*</span></label>
+          <label>FBA配送费 <span class="unit">(€ · 自动查表，可改)</span> <span class="req">*</span></label>
           <input id="fbaFee" type="number" step="0.01" placeholder="2.54">
+          <div class="ad-hint" id="fbaHint" style="font-size:11px;color:var(--accent);margin-top:4px;"></div>
         </div>
         <div class="form-group">
           <label>头程单价 <span class="unit">(¥/kg)</span></label>
           <input id="tcRate" type="number" step="0.1" value="30" placeholder="30">
         </div>
       </div>
+      <div class="collapsible" id="rateTableSection">
+        <div class="collapsible-trigger" onclick="toggleRateTable()">
+          <span class="arrow">▶</span> 📋 查看配送费率表 <span style="font-size:11px;color:var(--muted)">(对照原表)</span>
+        </div>
+        <div class="collapsible-body" id="rateTableBody"></div>
+      </div>
       <div class="row">
         <div class="form-group">
           <label>增值税税点</label>
-          <select id="vatCountry">
+          <select id="vatCountry" onchange="autoFillFba()">
             <option value="DE" selected>德国 19%</option>
             <option value="FR">法国 20%</option>
             <option value="IT">意大利 22%</option>
@@ -477,6 +496,111 @@ function saveProducts(products) {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(products));
 }
 
+// ==================== 运费查表（亚马逊物流欧洲整合服务 · 本地配送）====================
+// 取「仅限德国」列，不含中欧计划；单位欧元/件。数据来源：用户提供的费率表截图
+const FBA_TIERS = ['轻型信封', '标准信封', '大信封', '超大信封', '小包裹', '标准包裹'];
+const COUNTRY_NAMES = { DE: '德国', FR: '法国', IT: '意大利', ES: '西班牙' };
+// 每档：[重量上限(KG), 配送费(€)]
+const FBA_RATES = {
+  DE: {
+    轻型信封: [[0.02, 2.33], [0.04, 2.37], [0.06, 2.39], [0.08, 2.52], [0.10, 2.54]],
+    标准信封: [[0.21, 2.57], [0.46, 2.68]],
+    大信封: [[0.96, 3.04]],
+    超大信封: [[0.96, 3.42]],
+    小包裹: [[0.15, 3.38], [0.40, 3.40], [0.90, 3.67], [1.4, 4.29], [1.9, 4.49], [3.9, 5.57]],
+    标准包裹: [[0.15, 3.39], [0.40, 3.78], [0.90, 3.90], [1.4, 4.54], [1.9, 4.97], [2.9, 5.20], [3.9, 5.67], [5.9, 5.95], [8.9, 6.41], [11.9, 6.65]],
+  },
+  FR: {
+    轻型信封: [[0.02, 2.75], [0.04, 2.76], [0.06, 2.78], [0.08, 3.30], [0.10, 3.32]],
+    标准信封: [[0.21, 3.33], [0.46, 3.77]],
+    大信封: [[0.96, 4.39]],
+    超大信封: [[0.96, 4.72]],
+    小包裹: [[0.15, 4.56], [0.40, 5.07], [0.90, 5.79], [1.4, 5.87], [1.9, 6.10], [3.9, 9.10]],
+    标准包裹: [[0.15, 4.58], [0.40, 5.40], [0.90, 6.28], [1.4, 6.41], [1.9, 6.84], [2.9, 9.36], [3.9, 9.55], [5.9, 9.67], [8.9, 10.53], [11.9, 11.03]],
+  },
+  IT: {
+    轻型信封: [[0.02, 3.23], [0.04, 3.26], [0.06, 3.28], [0.08, 3.39], [0.10, 3.41]],
+    标准信封: [[0.21, 3.45], [0.46, 3.64]],
+    大信封: [[0.96, 3.94]],
+    超大信封: [[0.96, 4.17]],
+    小包裹: [[0.15, 4.13], [0.40, 4.54], [0.90, 4.95], [1.4, 5.51], [1.9, 5.81], [3.9, 6.93]],
+    标准包裹: [[0.15, 4.29], [0.40, 4.70], [0.90, 5.15], [1.4, 5.81], [1.9, 6.05], [2.9, 6.71], [3.9, 6.96], [5.9, 7.25], [8.9, 8.04], [11.9, 8.63]],
+  },
+  ES: {
+    轻型信封: [[0.02, 2.77], [0.04, 2.84], [0.06, 2.87], [0.08, 3.21], [0.10, 3.23]],
+    标准信封: [[0.21, 3.26], [0.46, 3.45]],
+    大信封: [[0.96, 3.60]],
+    超大信封: [[0.96, 3.85]],
+    小包裹: [[0.15, 3.52], [0.40, 3.74], [0.90, 3.95], [1.4, 4.21], [1.9, 4.27], [3.9, 5.50]],
+    标准包裹: [[0.15, 3.55], [0.40, 4.05], [0.90, 4.45], [1.4, 4.85], [1.9, 4.94], [2.9, 4.98], [3.9, 5.53], [5.9, 7.02], [8.9, 7.24], [11.9, 7.85]],
+  },
+};
+
+function fmtKg(kg) {
+  return kg < 1 ? Math.round(kg * 1000) + '克' : kg + '千克';
+}
+
+function lookupFba(country, tier, weightKg) {
+  const rows = (FBA_RATES[country] || FBA_RATES.DE)[tier];
+  if (!rows || !rows.length || !(weightKg > 0)) return null;
+  for (let i = 0; i < rows.length; i++) {
+    if (weightKg <= rows[i][0] + 1e-9) {
+      return { fee: rows[i][1], max: rows[i][0], label: fmtKg(rows[i][0]) };
+    }
+  }
+  return { over: true, max: rows[rows.length - 1][0] };
+}
+
+// keepValue=true 时只更新提示、不覆盖用户已填的配送费（回看历史记录时用）
+function autoFillFba(keepValue) {
+  const country = document.getElementById('vatCountry').value || 'DE';
+  const tier = document.getElementById('sizeTier').value || '小包裹';
+  const weightKg = parseFloat(document.getElementById('weightKg').value) || 0;
+  const feeEl = document.getElementById('fbaFee');
+  const hint = document.getElementById('fbaHint');
+  const res = lookupFba(country, tier, weightKg);
+  const tierHint = document.getElementById('tierHint');
+  if (!res) { if (hint) hint.textContent = ''; if (tierHint) tierHint.textContent = ''; return; }
+  if (res.over) {
+    hint.style.color = 'var(--yellow)';
+    hint.textContent = '⚠ 超重：' + tier + ' 上限 ' + fmtKg(res.max) + '，请选更大的尺寸级别';
+    if (tierHint) { tierHint.style.color = 'var(--yellow)'; tierHint.textContent = '⚠ 超出该尺寸级别上限（' + fmtKg(res.max) + '）'; }
+    if (keepValue !== true) feeEl.value = '';
+    return;
+  }
+  if (keepValue !== true) feeEl.value = res.fee.toFixed(2);
+  const msg = COUNTRY_NAMES[country] + ' · ' + tier + ' · ≤' + res.label + ' → €' + res.fee.toFixed(2);
+  hint.style.color = 'var(--accent)';
+  hint.textContent = msg + '（自动查表）';
+  if (tierHint) { tierHint.style.color = 'var(--accent)'; tierHint.textContent = msg + '　自动填入配送费'; }
+}
+
+function toggleRateTable() {
+  const sec = document.getElementById('rateTableSection');
+  sec.classList.toggle('open');
+  if (sec.classList.contains('open')) renderRateTable();
+}
+
+function renderRateTable() {
+  const body = document.getElementById('rateTableBody');
+  if (!body) return;
+  const country = document.getElementById('vatCountry').value || 'DE';
+  const curTier = document.getElementById('sizeTier').value || '小包裹';
+  const rates = FBA_RATES[country] || FBA_RATES.DE;
+  let html = '<div style="font-size:11px;color:var(--muted);margin-bottom:6px;">' + COUNTRY_NAMES[country] + ' · 欧元/件 · 仅限本国列（不含中欧计划）</div>';
+  html += '<table class="comparison-table" style="min-width:0;"><tr><th>重量段</th><th>配送费</th></tr>';
+  FBA_TIERS.forEach(t => {
+    if (!rates[t]) return;
+    const isCur = t === curTier;
+    html += '<tr><td colspan="2" style="text-align:left;font-weight:700;color:' + (isCur ? 'var(--accent)' : 'var(--muted)') + ';background:rgba(56,189,248,0.06);">' + t + (isCur ? ' ←当前' : '') + '</td></tr>';
+    rates[t].forEach(([max, fee]) => {
+      html += '<tr' + (isCur ? ' class="highlight"' : '') + '><td style="text-align:left;">≤' + fmtKg(max) + '</td><td>€' + fee.toFixed(2) + '</td></tr>';
+    });
+  });
+  html += '</table>';
+  body.innerHTML = html;
+}
+
 // ==================== ANALYSIS ENGINE（欧洲站 ML2 口径）====================
 const VAT_RATES = { DE: 0.19, FR: 0.20, IT: 0.22, ES: 0.21 };
 
@@ -490,6 +614,8 @@ function analyzeProduct(data) {
   const tcRate = parseFloat(data.tcRate) || 0;
   const hl = parseFloat(data.hl) || 7.3;
   const fbaFee = parseFloat(data.fbaFee) || 0;
+  const sizeTier = data.sizeTier || '小包裹';
+  const fbaLookup = lookupFba(data.vatCountry || 'DE', sizeTier, weightKg);
   const vat = VAT_RATES[data.vatCountry] || 0.19;
   const prodType = data.prodType || 'gongmo';
   const targetMargin = (parseFloat(data.targetMargin) || 30) / 100;
@@ -601,7 +727,8 @@ function analyzeProduct(data) {
 
   return {
     price, sales, reviews, rating, costCNY, prodType,
-    weightKg, tcRate, hl, fbaFee, vat,
+    weightKg, tcRate, hl, fbaFee, vat, sizeTier,
+    fbaBracket: fbaLookup && fbaLookup.label ? fbaLookup.label : null,
     hasProfit, profit, costCeiling,
     reviewLevel, reviewLabel, ratingLevel,
     categories, totalLines, badCategories, topBad,
@@ -623,6 +750,7 @@ function generateReport() {
     cost1688: currentProdType === 'gongmo' ? document.getElementById('cost1688').value : '',
     targetMargin: document.getElementById('targetMargin').value,
     weightKg: document.getElementById('weightKg').value,
+    sizeTier: document.getElementById('sizeTier').value,
     tcRate: document.getElementById('tcRate').value,
     fbaFee: document.getElementById('fbaFee').value,
     vatCountry: document.getElementById('vatCountry').value,
@@ -635,7 +763,8 @@ function generateReport() {
   if (!data.weightKg) { showToast('⚠️ 重量为必填项（算头程运费用）'); return; }
   if (!data.fbaFee) {
     document.getElementById('costParamSection').classList.add('open');
-    showToast('⚠️ 请在「成本与参数」里填写FBA配送费');
+    const lk = lookupFba(data.vatCountry || 'DE', data.sizeTier || '小包裹', parseFloat(data.weightKg) || 0);
+    showToast(lk && lk.over ? '⚠ 重量超出该尺寸级别上限，请选更大的尺寸级别' : '⚠ 请在「成本与参数」里填写FBA配送费');
     return;
   }
   if (data.prodType === 'gongmo' && !data.cost1688) {
@@ -762,7 +891,7 @@ function renderReport(data, r) {
               <td style="text-align:right;color:var(--red);">−€${p.cb}</td>
             </tr>
             <tr>
-              <td style="padding:3px 0;color:var(--muted);">➖ FBA配送费</td>
+              <td style="padding:3px 0;color:var(--muted);">➖ FBA配送费${r.sizeTier ? '（' + (COUNTRY_NAMES[data.vatCountry] || '德国') + '·' + r.sizeTier + (r.fbaBracket ? '·≤' + r.fbaBracket : '') + '）' : ''}</td>
               <td style="text-align:right;color:var(--red);">−€${r.fbaFee.toFixed(2)}</td>
             </tr>
             <tr style="border-bottom:1px dashed var(--border);">
@@ -941,11 +1070,13 @@ function viewProduct(index) {
   document.getElementById('cost1688').value = p.cost1688 || '';
   document.getElementById('targetMargin').value = p.targetMargin || '30';
   document.getElementById('weightKg').value = p.weightKg || '';
+  document.getElementById('sizeTier').value = p.sizeTier || '小包裹';
   document.getElementById('tcRate').value = p.tcRate || '30';
   document.getElementById('fbaFee').value = p.fbaFee || '';
   document.getElementById('vatCountry').value = p.vatCountry || 'DE';
   document.getElementById('hl').value = p.hl || '7.3';
   setProdType(p.prodType || 'gongmo');
+  autoFillFba(true);
   document.getElementById('negativeReviews').value = p.negativeReviews || '';
 
   // Restore image (set input FIRST to avoid oninput triggering clearImage)
