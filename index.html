@@ -68,6 +68,11 @@
   input:focus, textarea:focus, select:focus {
     outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px rgba(56,189,248,0.15);
   }
+  /* 提示字压暗：明显弱于正文，避免误认为已填写的内容 */
+  input::placeholder, textarea::placeholder {
+    color: rgba(148,163,184,0.45);
+    opacity: 1;
+  }
   .row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
   .row-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; }
 
@@ -321,7 +326,7 @@
   <div class="group-title">🛒 产品信息</div>
   <div class="form-group">
     <label>产品名称 <span class="req">*</span></label>
-    <input id="productName" placeholder="例：Greeting Cards Set of 2（贺卡2件装）">
+    <input id="productName" placeholder="">
   </div>
   <div class="row">
     <div class="form-group">
@@ -330,7 +335,7 @@
     </div>
     <div class="form-group">
       <label>重量 <span class="unit">(克)</span> <span class="req">*</span></label>
-      <input id="weightG" type="number" step="1" placeholder="80" oninput="autoFillFba()">
+      <input id="weightG" type="number" step="1" placeholder="" oninput="autoFillFba()">
     </div>
   </div>
   <div class="form-group">
@@ -347,7 +352,7 @@
   </div>
   <div class="form-group">
     <label>🔗 亚马逊链接 <span class="unit">(选填 · 存着方便回看)</span></label>
-    <input id="amazonUrl" placeholder="https://www.amazon.de/dp/B0XXXXXXXX">
+    <input id="amazonUrl" placeholder="https://www.amazon.de/dp/…">
   </div>
 
   <div class="collapsible" id="supplierSection">
@@ -360,7 +365,7 @@
   <div class="form-group">
     <label>产品主图 <span class="unit">(选填)</span></label>
     <div class="image-upload-row">
-      <input id="imageUrl" placeholder="粘贴图片链接，或点击右侧上传" oninput="previewImageUrl()">
+      <input id="imageUrl" placeholder="图片链接" oninput="previewImageUrl()">
       <input type="file" id="imageFile" accept="image/*" onchange="handleImageUpload(event)" style="display:none;">
       <button class="btn btn-sm" onclick="document.getElementById('imageFile').click()" type="button">📁 上传</button>
     </div>
@@ -1320,7 +1325,7 @@ function addSupplier(name, url) {
     <button class="remove-btn" onclick="this.parentElement.remove()">✕</button>
     <div class="row">
       <div class="form-group"><label>备注</label><input class="sup-name" placeholder="厂家A ¥8.5" value="${escapeAttr(name || '')}"></div>
-      <div class="form-group"><label>链接</label><input class="sup-url" placeholder="https://detail.1688.com/..." value="${escapeAttr(url || '')}"></div>
+      <div class="form-group"><label>链接</label><input class="sup-url" placeholder="https://detail.1688.com/…" value="${escapeAttr(url || '')}"></div>
     </div>
   `;
   const btn = body.querySelector('.add-comp-btn');
