@@ -124,6 +124,16 @@
   .ceiling-box .big { font-size: 22px; font-weight: 800; color: var(--yellow); }
   .seg.none { background: var(--border); }
 
+  /* 参考链接 */
+  .link-list { display: flex; flex-wrap: wrap; gap: 8px; margin: 4px 0 14px; }
+  .ext-link {
+    display: inline-flex; align-items: center; gap: 4px; padding: 6px 12px;
+    border-radius: 8px; background: rgba(56,189,248,0.08);
+    border: 1px solid rgba(56,189,248,0.25); color: var(--accent);
+    font-size: 12px; font-weight: 600; text-decoration: none; word-break: break-all;
+  }
+  .ext-link:active { opacity: 0.7; }
+
   /* 字段分组标题 */
   .group-title {
     font-size: 13px; font-weight: 700; color: var(--accent);
@@ -335,6 +345,18 @@
     </select>
     <div class="ad-hint" id="tierHint" style="font-size:11px;color:var(--accent);margin-top:4px;"></div>
   </div>
+  <div class="form-group">
+    <label>🔗 亚马逊链接 <span class="unit">(选填 · 存着方便回看)</span></label>
+    <input id="amazonUrl" placeholder="https://www.amazon.de/dp/B0XXXXXXXX">
+  </div>
+
+  <div class="collapsible" id="supplierSection">
+    <div class="collapsible-trigger" onclick="toggleSupplier()">
+      <span class="arrow">▶</span> 🏭 供应商链接 <span style="font-size:11px;color:var(--muted)">(可加多家)</span>
+    </div>
+    <div class="collapsible-body" id="supplierBody"></div>
+  </div>
+
   <div class="form-group">
     <label>产品主图 <span class="unit">(选填)</span></label>
     <div class="image-upload-row">
@@ -761,6 +783,12 @@ function generateReport() {
     vatCountry: document.getElementById('vatCountry').value,
     hl: document.getElementById('hl').value,
     negativeReviews: document.getElementById('negativeReviews').value,
+    amazonUrl: normalizeUrl(document.getElementById('amazonUrl').value),
+    suppliers: Array.from(document.querySelectorAll('.supplier-row')).map((row, i) => ({
+      name: (row.querySelector('.sup-name')?.value || '').trim(),
+      url: normalizeUrl(row.querySelector('.sup-url')?.value),
+      idx: i + 1,
+    })).filter(s => s.url),
   };
 
   if (!data.productName) { showToast('⚠️ 请至少填写产品名称'); return; }
@@ -953,6 +981,17 @@ function renderReport(data, r) {
     </div>`;
   }
 
+  // 参考链接
+  const linkItems = [];
+  if (data.amazonUrl) linkItems.push({ label: '🔗 亚马逊商品页', url: data.amazonUrl });
+  (data.suppliers || []).forEach((s, i) => {
+    linkItems.push({ label: '🏭 ' + (s.name || '供应商' + (i + 1)), url: s.url });
+  });
+  const linksHtml = linkItems.length
+    ? `<div class="section-title">参考链接</div>
+       <div class="link-list">${linkItems.map(l => `<a class="ext-link" href="${escapeAttr(l.url)}" target="_blank" rel="noopener noreferrer">${escapeHtml(l.label)}</a>`).join('')}</div>`
+    : '';
+
   const html = `
     <div class="card" id="report-card" style="border-top: 3px solid var(--accent);">
       <div class="card-header">
@@ -962,6 +1001,8 @@ function renderReport(data, r) {
       <div style="font-size:12px;color:var(--muted);margin-bottom:12px;">
         ${data.asin ? 'ASIN: ' + escapeHtml(data.asin) + ' · ' : ''}${data.prodType === 'dingzhi' ? '定制 · ' : '公模 · '}${data.vatCountry || 'DE'} · 分析于 ${new Date(data.createdAt).toLocaleString('zh-CN')}
       </div>
+
+      ${linksHtml}
 
       ${data.imageData ? `<img class="card-img" src="${data.imageData.value.replace(/"/g, '&quot;')}" alt="产品主图" onerror="this.style.display='none'">` : ''}
 
@@ -1050,7 +1091,7 @@ function renderProductList() {
           评论${p.reviewCount || '?'} ·
           ⭐${p.rating || '?'} ·
           ${p.price ? '€' + p.price : ''} ·
-          ${vLabel}
+          ${vLabel}${(p.amazonUrl || (p.suppliers || []).length) ? ' · 🔗' : ''}
         </div>
         </div>
         <button class="item-del" onclick="event.stopPropagation();deleteSingle(${i})" title="删除">🗑</button>
@@ -1083,6 +1124,12 @@ function viewProduct(index) {
   setProdType(p.prodType || 'gongmo');
   autoFillFba(true);
   document.getElementById('negativeReviews').value = p.negativeReviews || '';
+
+  // 参考链接
+  document.getElementById('amazonUrl').value = p.amazonUrl || '';
+  clearSuppliers();
+  (p.suppliers || []).forEach(s => addSupplier(s.name, s.url));
+  if ((p.suppliers || []).length) document.getElementById('supplierSection').classList.add('open');
 
   // Restore image (set input FIRST to avoid oninput triggering clearImage)
   if (p.imageData) {
@@ -1235,6 +1282,68 @@ function setProdType(t) {
 // 成本参数折叠区
 function toggleCostParams() {
   document.getElementById('costParamSection').classList.toggle('open');
+}
+
+// ==================== 供应商链接 ====================
+// 只放行 http/https，顺手补全漏写的协议；其他（javascript: 等）一律拒掉
+function normalizeUrl(raw) {
+  let u = (raw || '').trim();
+  if (!u) return '';
+  if (!/^[a-z][a-z0-9+.-]*:/i.test(u)) {
+    // 没写协议：形如 detail.1688.com/xxx 就补 https
+    if (/^[\w-]+(\.[\w-]+)+(\/|$)/.test(u)) u = 'https://' + u;
+    else return '';
+  }
+  return /^https?:\/\//i.test(u) ? u : '';
+}
+
+function escapeAttr(str) {
+  return String(str == null ? '' : str)
+    .replace(/&/g, '&amp;').replace(/"/g, '&quot;')
+    .replace(/</g, '&lt;').replace(/>/g, '&gt;');
+}
+
+function toggleSupplier() {
+  const sec = document.getElementById('supplierSection');
+  sec.classList.toggle('open');
+  if (sec.classList.contains('open') && !document.querySelectorAll('.supplier-row').length) {
+    addSupplier();
+  }
+}
+
+function addSupplier(name, url) {
+  const body = document.getElementById('supplierBody');
+  const n = document.querySelectorAll('.supplier-row').length + 1;
+  const card = document.createElement('div');
+  card.className = 'competitor-card supplier-row';
+  card.innerHTML = `
+    <button class="remove-btn" onclick="this.parentElement.remove()">✕</button>
+    <div class="row">
+      <div class="form-group"><label>备注</label><input class="sup-name" placeholder="厂家A ¥8.5" value="${escapeAttr(name || '')}"></div>
+      <div class="form-group"><label>链接</label><input class="sup-url" placeholder="https://detail.1688.com/..." value="${escapeAttr(url || '')}"></div>
+    </div>
+  `;
+  const btn = body.querySelector('.add-comp-btn');
+  if (btn) body.insertBefore(card, btn); else body.appendChild(card);
+  ensureAddSupplierBtn();
+}
+
+function ensureAddSupplierBtn() {
+  const body = document.getElementById('supplierBody');
+  if (!body.querySelector('.add-comp-btn')) {
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'add-comp-btn';
+    btn.textContent = '＋ 添加一家供应商';
+    btn.onclick = () => addSupplier();
+    body.appendChild(btn);
+  }
+}
+
+function clearSuppliers() {
+  const body = document.getElementById('supplierBody');
+  body.innerHTML = '';
+  ensureAddSupplierBtn();
 }
 
 // Competitor toggle
