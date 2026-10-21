@@ -139,6 +139,22 @@
   }
   .ext-link:active { opacity: 0.7; }
 
+  /* 定价实时结果 */
+  .live-box {
+    margin-top: 8px; padding: 10px 12px; border-radius: 8px;
+    background: rgba(56,189,248,0.06); border: 1px solid rgba(56,189,248,0.2);
+    font-size: 13px; line-height: 1.8;
+  }
+  .live-box .big { font-size: 20px; font-weight: 800; margin: 0 2px; }
+  .live-box .k { color: var(--muted); font-size: 12px; }
+
+  .price-compare {
+    font-size: 13px; color: var(--muted); margin: -6px 0 12px;
+    padding: 8px 12px; border-radius: 8px; background: rgba(255,255,255,0.03);
+    border: 1px solid var(--border);
+  }
+  .price-compare .arrow { color: var(--accent); margin: 0 4px; }
+
   /* 字段分组标题 */
   .group-title {
     font-size: 13px; font-weight: 700; color: var(--accent);
@@ -148,9 +164,20 @@
   .group-title::after { content: ''; flex: 1; height: 1px; background: var(--border); }
   .req { color: var(--red); font-weight: 700; }
 
-  /* 悬浮生成按钮 */
-  .generate-sticky { position: sticky; bottom: 12px; z-index: 10; padding: 8px 0; }
-  .generate-sticky .btn-primary { box-shadow: 0 4px 20px rgba(56,189,248,0.35); }
+  /* 悬浮生成按钮 + 常驻 ML2 读数 */
+  .generate-sticky {
+    position: sticky; bottom: 0; z-index: 10;
+    display: flex; align-items: center; gap: 8px;
+    padding: 10px 0 12px; background: var(--bg);
+  }
+  .generate-sticky .btn-primary { flex: 1; box-shadow: 0 4px 20px rgba(56,189,248,0.35); }
+  .sticky-ml2 {
+    display: none; flex-shrink: 0; font-size: 13px; font-weight: 800;
+    padding: 10px 12px; border-radius: 8px; white-space: nowrap;
+    background: rgba(255,255,255,0.05); border: 1px solid var(--border);
+  }
+  .sticky-ml2.show { display: block; }
+  #panel-analyze { padding-bottom: 8px; }
 
   .metric-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; margin-bottom: 14px; }
   .metric {
@@ -335,7 +362,7 @@
     </div>
     <div class="form-group">
       <label>重量 <span class="unit">(克)</span> <span class="req">*</span></label>
-      <input id="weightG" type="number" step="1" placeholder="" oninput="autoFillFba()">
+      <input id="weightG" type="number" step="1" placeholder="" oninput="autoFillFba();updateLivePrice()">
     </div>
   </div>
   <div class="form-group">
@@ -355,13 +382,6 @@
     <input id="amazonUrl" placeholder="https://www.amazon.de/dp/…">
   </div>
 
-  <div class="collapsible" id="supplierSection">
-    <div class="collapsible-trigger" onclick="toggleSupplier()">
-      <span class="arrow">▶</span> 🏭 供应商链接 <span style="font-size:11px;color:var(--muted)">(可加多家)</span>
-    </div>
-    <div class="collapsible-body" id="supplierBody"></div>
-  </div>
-
   <div class="form-group">
     <label>产品主图 <span class="unit">(选填)</span></label>
     <div class="image-upload-row">
@@ -378,8 +398,8 @@
   <div class="group-title">📊 市场数据</div>
   <div class="row-3">
     <div class="form-group">
-      <label>售价 <span class="unit">(€)</span> <span class="req">*</span></label>
-      <input id="price" type="number" step="0.01" placeholder="10.99">
+      <label>竞品价 <span class="unit">(€)</span></label>
+      <input id="price" type="number" step="0.01" placeholder="10.99" oninput="updateLivePrice()">
     </div>
     <div class="form-group">
       <label>月销量</label>
@@ -405,6 +425,13 @@
     <textarea id="negativeReviews" placeholder="例：卡片太薄，容易弯折&#10;颜色跟图片不一样，实物偏暗&#10;包装太差，到货压坏了&#10;尺寸比想象的小"></textarea>
   </div>
 
+  <div class="collapsible" id="supplierSection">
+    <div class="collapsible-trigger" onclick="toggleSupplier()">
+      <span class="arrow">▶</span> 🏭 供应商链接 <span style="font-size:11px;color:var(--muted)">(可加多家)</span>
+    </div>
+    <div class="collapsible-body" id="supplierBody"></div>
+  </div>
+
   <div class="collapsible" id="costParamSection">
     <div class="collapsible-trigger" onclick="toggleCostParams()">
       <span class="arrow">▶</span> 💰 成本与参数 <span style="font-size:11px;color:var(--muted)">(定制/成本/税点/汇率)</span>
@@ -417,23 +444,28 @@
           <button type="button" id="typeDingzhi" onclick="setProdType('dingzhi')">定制 · 成本未定</button>
         </div>
       </div>
+      <div class="form-group" id="myPriceGroup">
+        <label>我的定价 <span class="unit">(€ · 想卖多少填多少，留空用竞品价)</span></label>
+        <input id="myPrice" type="number" step="0.01" placeholder="12.99" oninput="updateLivePrice()">
+        <div class="live-box" id="livePriceBox"></div>
+      </div>
       <div class="form-group" id="costGroup">
         <label>1688采购成本 <span class="unit">(¥ 人民币)</span> <span class="req">*</span></label>
-        <input id="cost1688" type="number" step="0.01" placeholder="10.80">
+        <input id="cost1688" type="number" step="0.01" placeholder="10.80" oninput="updateLivePrice()">
       </div>
       <div class="form-group" id="targetMarginGroup" style="display:none;">
         <label>目标利润率 <span class="unit">(%) · ML2达标线，默认30</span></label>
-        <input id="targetMargin" type="number" step="1" value="30" placeholder="30">
+        <input id="targetMargin" type="number" step="1" value="30" placeholder="30" oninput="updateLivePrice()">
       </div>
       <div class="row">
         <div class="form-group">
-          <label>FBA配送费 <span class="unit">(€ · 自动查表，可改)</span> <span class="req">*</span></label>
-          <input id="fbaFee" type="number" step="0.01" placeholder="2.54">
+          <label>FBA配送费 <span class="unit">(€)</span> <span class="req">*</span></label>
+          <input id="fbaFee" type="number" step="0.01" placeholder="2.54" oninput="updateLivePrice()">
           <div class="ad-hint" id="fbaHint" style="font-size:11px;color:var(--accent);margin-top:4px;"></div>
         </div>
         <div class="form-group">
           <label>头程单价 <span class="unit">(¥/kg)</span></label>
-          <input id="tcRate" type="number" step="0.1" value="30" placeholder="30">
+          <input id="tcRate" type="number" step="0.1" value="30" placeholder="30" oninput="updateLivePrice()">
         </div>
       </div>
       <div class="collapsible" id="rateTableSection">
@@ -445,7 +477,7 @@
       <div class="row">
         <div class="form-group">
           <label>增值税税点</label>
-          <select id="vatCountry" onchange="autoFillFba()">
+          <select id="vatCountry" onchange="autoFillFba();updateLivePrice()">
             <option value="DE" selected>德国 19%</option>
             <option value="FR">法国 20%</option>
             <option value="IT">意大利 22%</option>
@@ -454,7 +486,7 @@
         </div>
         <div class="form-group">
           <label>汇率 <span class="unit">(€→¥)</span></label>
-          <input id="hl" type="number" step="0.01" value="7.3" placeholder="7.3">
+          <input id="hl" type="number" step="0.01" value="7.3" placeholder="7.3" oninput="updateLivePrice()">
         </div>
       </div>
     </div>
@@ -469,6 +501,7 @@
   </div>
 
   <div class="generate-sticky">
+    <div class="sticky-ml2" id="stickyMl2"></div>
     <button class="btn btn-primary" onclick="generateReport()">⚡ 生成分析报告</button>
   </div>
 
@@ -636,7 +669,9 @@ function renderRateTable() {
 const VAT_RATES = { DE: 0.19, FR: 0.20, IT: 0.22, ES: 0.21 };
 
 function analyzeProduct(data) {
-  const price = parseFloat(data.price) || 0;
+  const compPrice = parseFloat(data.price) || 0;      // 竞品售价（市场参考）
+  const myPrice = parseFloat(data.myPrice) || 0;      // 我的定价（算利润用）
+  const price = myPrice || compPrice;                 // 没填我的定价就沿用竞品价
   const sales = parseInt(data.monthlySales) || 0;
   const reviews = parseInt(data.reviewCount) || 0;
   const rating = parseFloat(data.rating) || 0;
@@ -683,6 +718,11 @@ function analyzeProduct(data) {
     const promoPrice30 = (cb + fbaFee + 0.5) / (1 - 0.05 - COMMISSION - 0.95 * vat / (1 + vat) - BM);
     const refBid = ml / 10;
 
+    // 达标售价：ML2 达到目标利润率所需的最低售价
+    const denom = 0.846 - vat / (1 + vat) - targetMargin;
+    const targetPrice = denom > 0 ? (cb + fbaFee) / denom : Infinity;
+    const targetGap = targetPrice === Infinity ? null : targetPrice - price;
+
     profit = {
       tu: tu.toFixed(2), cb: cb.toFixed(2), referralFee: referralFee.toFixed(2),
       vatAmount: vatAmount.toFixed(2), vatPct: Math.round(vat * 100),
@@ -690,6 +730,10 @@ function analyzeProduct(data) {
       hb: hb.toFixed(1), hb2: hb2.toFixed(2),
       floorPrice: floorPrice.toFixed(2), floorAcos: (floorAcos * 100).toFixed(1),
       promoPrice30: promoPrice30.toFixed(2), refBid: refBid.toFixed(2),
+      targetPrice: targetPrice === Infinity ? null : targetPrice.toFixed(2),
+      targetGap: targetGap === null ? null : targetGap.toFixed(2),
+      targetPct: Math.round(targetMargin * 100),
+      reached: ml2 >= targetMargin,
     };
   }
 
@@ -758,7 +802,7 @@ function analyzeProduct(data) {
   const totalBad = badCategories.reduce((s, [_, v]) => s + v.count, 0);
 
   return {
-    price, sales, reviews, rating, costCNY, prodType,
+    price, compPrice, myPrice, sales, reviews, rating, costCNY, prodType,
     weightG, weightKg, tcRate, hl, fbaFee, vat, sizeTier,
     fbaBracket: fbaLookup && fbaLookup.label ? fbaLookup.label : null,
     hasProfit, profit, costCeiling,
@@ -769,11 +813,12 @@ function analyzeProduct(data) {
 }
 
 // ==================== UI RENDERING ====================
-function generateReport() {
-  const data = {
+function readFormValues() {
+  return {
     productName: document.getElementById('productName').value.trim(),
     asin: document.getElementById('asin').value.trim(),
-    price: document.getElementById('price').value,
+    price: document.getElementById('price').value,          // 竞品售价
+    myPrice: document.getElementById('myPrice').value,      // 我的定价
     monthlySales: document.getElementById('monthlySales').value,
     reviewCount: document.getElementById('reviewCount').value,
     rating: document.getElementById('rating').value,
@@ -795,9 +840,50 @@ function generateReport() {
       idx: i + 1,
     })).filter(s => s.url),
   };
+}
+
+// 改定价/成本即实时显示 ML2，不用点生成报告
+function updateLivePrice() {
+  const box = document.getElementById('livePriceBox');
+  const chip = document.getElementById('stickyMl2');
+  const hideAll = () => { if (box) box.innerHTML = ''; if (chip) chip.classList.remove('show'); };
+  if (!box) return;
+  const d = readFormValues();
+  const usedPrice = parseFloat(d.myPrice) || parseFloat(d.price) || 0;
+
+  if (!usedPrice) { hideAll(); box.innerHTML = '<span class="k">填「我的定价」或「竞品价」后实时显示 ML2</span>'; return; }
+  if (!d.weightG) { hideAll(); box.innerHTML = '<span class="k">先填重量，才能算配送费</span>'; return; }
+  if (d.prodType === 'gongmo' && !d.cost1688) { hideAll(); box.innerHTML = '<span class="k">填入 1688 采购成本后显示 ML2</span>'; return; }
+
+  const r = analyzeProduct(d);
+  if (!r.profit) { hideAll(); box.innerHTML = '<span class="k">数据不足，无法计算</span>'; return; }
+  const p = r.profit;
+  const m = parseFloat(p.ml2);
+  const color = m >= p.targetPct ? 'var(--green)' : m >= p.targetPct * 0.66 ? 'var(--yellow)' : 'var(--red)';
+  const priceNote = r.myPrice ? '' : '（沿用竞品价）';
+  const gap = p.targetGap === null ? null : parseFloat(p.targetGap);
+  const gapHtml = p.targetPrice === null
+    ? '<span style="color:var(--red);">该目标利润率在当前成本下无法达到</span>'
+    : (gap > 0
+      ? `还差 <b style="color:var(--yellow);">€${gap.toFixed(2)}</b> 才达标（需 ≥ €${p.targetPrice}）`
+      : `已达标 ✓（最低 €${p.targetPrice} 即可）`);
+
+  box.innerHTML =
+    `售价 €${r.price.toFixed(2)}${priceNote}　→　ML2 <span class="big" style="color:${color};">${p.ml2}%</span>　利润 €${p.ml}` +
+    `<br><span class="k">达标线 ${p.targetPct}%：${gapHtml}</span>`;
+
+  if (chip) {
+    chip.textContent = 'ML2 ' + p.ml2 + '%';
+    chip.style.color = color;
+    chip.classList.add('show');
+  }
+}
+
+function generateReport() {
+  const data = readFormValues();
 
   if (!data.productName) { showToast('⚠️ 请至少填写产品名称'); return; }
-  if (!data.price) { showToast('⚠️ 售价为必填项'); return; }
+  if (!data.price && !data.myPrice) { showToast('⚠️ 请填写「我的定价」或「竞品售价」'); return; }
   if (!data.weightG) { showToast('⚠️ 重量为必填项（算头程运费用）'); return; }
   if (!data.fbaFee) {
     document.getElementById('costParamSection').classList.add('open');
@@ -917,7 +1003,7 @@ function renderReport(data, r) {
         <div style="font-size:13px;line-height:2.2;padding:8px 0;">
           <table style="width:100%;border-collapse:collapse;color:var(--text);">
             <tr>
-              <td style="padding:3px 0;color:var(--muted);">售价（Amazon）</td>
+              <td style="padding:3px 0;color:var(--muted);">售价（我的定价）</td>
               <td style="text-align:right;font-weight:700;">€${r.price.toFixed(2)}</td>
             </tr>
             <tr>
@@ -949,6 +1035,7 @@ function renderReport(data, r) {
           <div class="ml2-item"><span class="k">30%ACOS促销价</span><span class="v">€${p.promoPrice30}</span></div>
           <div class="ml2-item"><span class="k">保底价促销ACOS</span><span class="v">${p.floorAcos}%</span></div>
           <div class="ml2-item"><span class="k">参考广告出价</span><span class="v">€${p.refBid}</span></div>
+          <div class="ml2-item"><span class="k">达标售价(${p.targetPct}%)</span><span class="v" style="color:${p.reached ? 'var(--green)' : 'var(--yellow)'};">${p.targetPrice ? '€' + p.targetPrice : '—'}</span></div>
         </div>
         </div>
       </div>
@@ -1028,10 +1115,16 @@ function renderReport(data, r) {
         </div>
         <div class="metric">
           <div class="value">€${r.price.toFixed(2)}</div>
-          <div class="label">售价</div>
+          <div class="label">${r.myPrice ? '我的定价' : '售价（竞品价）'}</div>
         </div>
         ${rankTile}
       </div>
+
+      ${(r.compPrice > 0 && r.myPrice > 0) ? (() => {
+        const diff = r.price - r.compPrice;
+        const pct = ((diff / r.compPrice) * 100).toFixed(1);
+        return `<div class="price-compare">竞品 €${r.compPrice.toFixed(2)} <span class="arrow">→</span> 我的定价 €${r.price.toFixed(2)}　<b style="color:${diff >= 0 ? 'var(--green)' : 'var(--red)'};">${diff >= 0 ? '+' : ''}${pct}%</b></div>`;
+      })() : ''}
 
       ${profitHtml}
 
@@ -1095,7 +1188,7 @@ function renderProductList() {
           销量${p.monthlySales || '?'} ·
           评论${p.reviewCount || '?'} ·
           ⭐${p.rating || '?'} ·
-          ${p.price ? '€' + p.price : ''} ·
+          ${(p.myPrice || p.price) ? '€' + (p.myPrice || p.price) : ''} ·
           ${vLabel}${(p.amazonUrl || (p.suppliers || []).length) ? ' · 🔗' : ''}
         </div>
         </div>
@@ -1114,6 +1207,7 @@ function viewProduct(index) {
   document.getElementById('productName').value = p.productName || '';
   document.getElementById('asin').value = p.asin || '';
   document.getElementById('price').value = p.price || '';
+  document.getElementById('myPrice').value = p.myPrice || '';
   document.getElementById('monthlySales').value = p.monthlySales || '';
   document.getElementById('reviewCount').value = p.reviewCount || '';
   document.getElementById('rating').value = p.rating || '';
@@ -1146,6 +1240,7 @@ function viewProduct(index) {
   }
 
   switchTab('analyze');
+  updateLivePrice();
   if (p.result) renderReport(p, p.result);
   window.scrollTo({ top: 0, behavior: 'smooth' });
 }
@@ -1282,6 +1377,7 @@ function setProdType(t) {
   document.getElementById('typeDingzhi').classList.toggle('active', t === 'dingzhi');
   document.getElementById('costGroup').style.display = t === 'gongmo' ? 'block' : 'none';
   document.getElementById('targetMarginGroup').style.display = t === 'dingzhi' ? 'block' : 'none';
+  if (typeof updateLivePrice === 'function') updateLivePrice();
 }
 
 // 成本参数折叠区
@@ -1622,6 +1718,7 @@ function escapeHtml(str) {
 // ==================== INIT ====================
 (function init() {
   // 表单不再预填示例数据——示例都在各字段的灰色提示（placeholder）里
+  updateLivePrice();
   // Auto-pull from cloud on page load (free, no token needed)
   autoPullFromCloud();
 })();
