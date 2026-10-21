@@ -202,9 +202,9 @@
   .collapsible { margin-bottom: 14px; }
   .collapsible-trigger { display: flex; align-items: center; gap: 6px; font-size: 13px; font-weight: 600; color: var(--accent); cursor: pointer; padding: 10px 0; user-select: none; }
   .collapsible-trigger .arrow { transition: transform 0.2s; font-size: 10px; }
-  .collapsible.open .arrow { transform: rotate(90deg); }
+  .collapsible.open > .collapsible-trigger .arrow { transform: rotate(90deg); }
   .collapsible-body { display: none; }
-  .collapsible.open .collapsible-body { display: block; }
+  .collapsible.open > .collapsible-body { display: block; }
   .competitor-card { background: var(--input-bg); border: 1px solid var(--border); border-radius: 10px; padding: 14px; margin-bottom: 10px; position: relative; }
   .competitor-card .remove-btn { position: absolute; top: 8px; right: 10px; width: 24px; height: 24px; border-radius: 50%; border: 1px solid var(--red); background: transparent; color: var(--red); font-size: 14px; cursor: pointer; line-height: 1; }
   .add-comp-btn { font-size: 12px; color: var(--accent); background: transparent; border: 1px dashed var(--border); padding: 8px 14px; border-radius: 8px; cursor: pointer; width: 100%; font-family: inherit; }
@@ -319,15 +319,15 @@
       <input id="asin" placeholder="B0XXXXXXXX">
     </div>
     <div class="form-group">
-      <label>重量 <span class="unit">(KG)</span> <span class="req">*</span></label>
-      <input id="weightKg" type="number" step="0.01" placeholder="0.08" oninput="autoFillFba()">
+      <label>重量 <span class="unit">(克)</span> <span class="req">*</span></label>
+      <input id="weightG" type="number" step="1" placeholder="80" oninput="autoFillFba()">
     </div>
   </div>
   <div class="form-group">
     <label>尺寸级别 <span class="unit">(决定配送费档位)</span></label>
     <select id="sizeTier" onchange="autoFillFba()">
-      <option value="小包裹" selected>小包裹 · ≤35×25×12cm（≤3.9kg）</option>
-      <option value="标准包裹">标准包裹 · ≤45×34×26cm（≤11.9kg）</option>
+      <option value="小包裹" selected>小包裹 · ≤35×25×12cm（≤3900克）</option>
+      <option value="标准包裹">标准包裹 · ≤45×34×26cm（≤11900克）</option>
       <option value="轻型信封">轻型信封 · ≤33×23×2.5cm（≤100克）</option>
       <option value="标准信封">标准信封 · ≤33×23×2.5cm（≤460克）</option>
       <option value="大信封">大信封 · ≤33×23×4cm（≤960克）</option>
@@ -540,6 +540,12 @@ function fmtKg(kg) {
   return kg < 1 ? Math.round(kg * 1000) + '克' : kg + '千克';
 }
 
+// 表单以「克」输入，内部统一换算成公斤查表/算头程
+function getWeightKg() {
+  const g = parseFloat(document.getElementById('weightG').value) || 0;
+  return g / 1000;
+}
+
 function lookupFba(country, tier, weightKg) {
   const rows = (FBA_RATES[country] || FBA_RATES.DE)[tier];
   if (!rows || !rows.length || !(weightKg > 0)) return null;
@@ -555,7 +561,7 @@ function lookupFba(country, tier, weightKg) {
 function autoFillFba(keepValue) {
   const country = document.getElementById('vatCountry').value || 'DE';
   const tier = document.getElementById('sizeTier').value || '小包裹';
-  const weightKg = parseFloat(document.getElementById('weightKg').value) || 0;
+  const weightKg = getWeightKg();
   const feeEl = document.getElementById('fbaFee');
   const hint = document.getElementById('fbaHint');
   const res = lookupFba(country, tier, weightKg);
@@ -585,17 +591,15 @@ function renderRateTable() {
   const body = document.getElementById('rateTableBody');
   if (!body) return;
   const country = document.getElementById('vatCountry').value || 'DE';
-  const curTier = document.getElementById('sizeTier').value || '小包裹';
+  const tier = document.getElementById('sizeTier').value || '小包裹';
   const rates = FBA_RATES[country] || FBA_RATES.DE;
-  let html = '<div style="font-size:11px;color:var(--muted);margin-bottom:6px;">' + COUNTRY_NAMES[country] + ' · 欧元/件 · 仅限本国列（不含中欧计划）</div>';
+  const rows = rates[tier] || [];
+  const hit = lookupFba(country, tier, getWeightKg());
+  let html = '<div style="font-size:11px;color:var(--muted);margin-bottom:6px;">' + COUNTRY_NAMES[country] + ' · ' + tier + ' · 欧元/件（仅限本国列）</div>';
   html += '<table class="comparison-table" style="min-width:0;"><tr><th>重量段</th><th>配送费</th></tr>';
-  FBA_TIERS.forEach(t => {
-    if (!rates[t]) return;
-    const isCur = t === curTier;
-    html += '<tr><td colspan="2" style="text-align:left;font-weight:700;color:' + (isCur ? 'var(--accent)' : 'var(--muted)') + ';background:rgba(56,189,248,0.06);">' + t + (isCur ? ' ←当前' : '') + '</td></tr>';
-    rates[t].forEach(([max, fee]) => {
-      html += '<tr' + (isCur ? ' class="highlight"' : '') + '><td style="text-align:left;">≤' + fmtKg(max) + '</td><td>€' + fee.toFixed(2) + '</td></tr>';
-    });
+  rows.forEach(([max, fee]) => {
+    const isHit = hit && !hit.over && hit.max === max;
+    html += '<tr' + (isHit ? ' class="highlight"' : '') + '><td style="text-align:left;">≤' + fmtKg(max) + (isHit ? ' ←当前' : '') + '</td><td>€' + fee.toFixed(2) + '</td></tr>';
   });
   html += '</table>';
   body.innerHTML = html;
@@ -610,7 +614,8 @@ function analyzeProduct(data) {
   const reviews = parseInt(data.reviewCount) || 0;
   const rating = parseFloat(data.rating) || 0;
   const costCNY = parseFloat(data.cost1688) || 0;
-  const weightKg = parseFloat(data.weightKg) || 0;
+  const weightG = parseFloat(data.weightG) || 0;
+  const weightKg = weightG / 1000;
   const tcRate = parseFloat(data.tcRate) || 0;
   const hl = parseFloat(data.hl) || 7.3;
   const fbaFee = parseFloat(data.fbaFee) || 0;
@@ -727,7 +732,7 @@ function analyzeProduct(data) {
 
   return {
     price, sales, reviews, rating, costCNY, prodType,
-    weightKg, tcRate, hl, fbaFee, vat, sizeTier,
+    weightG, weightKg, tcRate, hl, fbaFee, vat, sizeTier,
     fbaBracket: fbaLookup && fbaLookup.label ? fbaLookup.label : null,
     hasProfit, profit, costCeiling,
     reviewLevel, reviewLabel, ratingLevel,
@@ -749,7 +754,7 @@ function generateReport() {
     prodType: currentProdType,
     cost1688: currentProdType === 'gongmo' ? document.getElementById('cost1688').value : '',
     targetMargin: document.getElementById('targetMargin').value,
-    weightKg: document.getElementById('weightKg').value,
+    weightG: document.getElementById('weightG').value,
     sizeTier: document.getElementById('sizeTier').value,
     tcRate: document.getElementById('tcRate').value,
     fbaFee: document.getElementById('fbaFee').value,
@@ -760,10 +765,10 @@ function generateReport() {
 
   if (!data.productName) { showToast('⚠️ 请至少填写产品名称'); return; }
   if (!data.price) { showToast('⚠️ 售价为必填项'); return; }
-  if (!data.weightKg) { showToast('⚠️ 重量为必填项（算头程运费用）'); return; }
+  if (!data.weightG) { showToast('⚠️ 重量为必填项（算头程运费用）'); return; }
   if (!data.fbaFee) {
     document.getElementById('costParamSection').classList.add('open');
-    const lk = lookupFba(data.vatCountry || 'DE', data.sizeTier || '小包裹', parseFloat(data.weightKg) || 0);
+    const lk = lookupFba(data.vatCountry || 'DE', data.sizeTier || '小包裹', (parseFloat(data.weightG) || 0) / 1000);
     showToast(lk && lk.over ? '⚠ 重量超出该尺寸级别上限，请选更大的尺寸级别' : '⚠ 请在「成本与参数」里填写FBA配送费');
     return;
   }
@@ -1069,7 +1074,7 @@ function viewProduct(index) {
   document.getElementById('rank').value = p.rank || '';
   document.getElementById('cost1688').value = p.cost1688 || '';
   document.getElementById('targetMargin').value = p.targetMargin || '30';
-  document.getElementById('weightKg').value = p.weightKg || '';
+  document.getElementById('weightG').value = p.weightG != null ? p.weightG : (p.weightKg ? Math.round(p.weightKg * 1000) : '');
   document.getElementById('sizeTier').value = p.sizeTier || '小包裹';
   document.getElementById('tcRate').value = p.tcRate || '30';
   document.getElementById('fbaFee').value = p.fbaFee || '';
