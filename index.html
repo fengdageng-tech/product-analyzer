@@ -161,6 +161,24 @@
     display: flex; align-items: center; gap: 10px;
   }
   .group-title::after { content: ''; flex: 1; height: 1px; background: var(--border); }
+  .group-title.with-action { justify-content: space-between; border-bottom: 1px solid var(--border); padding-bottom: 8px; }
+  .group-title.with-action::after { display: none; }
+  .gt-link {
+    font-size: 11px; font-weight: 600; color: var(--accent);
+    cursor: pointer; letter-spacing: 0; padding: 3px 8px;
+    border-radius: 6px; border: 1px solid rgba(91,139,247,0.35);
+    background: rgba(91,139,247,0.1);
+  }
+  .gt-link:active { opacity: .7; }
+
+  .new-product-btn {
+    display: block; width: 100%; padding: 12px; margin-bottom: 14px;
+    border-radius: 11px; border: 1px solid var(--border);
+    background: rgba(255,255,255,0.04); color: var(--text);
+    font-size: 14px; font-weight: 600; cursor: pointer; font-family: inherit;
+  }
+  .new-product-btn:active { opacity: .7; }
+  .new-product-btn b { color: var(--accent); font-weight: 700; }
   .req { color: var(--red); font-weight: 700; }
 
   /* 悬浮生成按钮 + 常驻 ML2 读数 */
@@ -440,19 +458,19 @@
 <!-- ====== Analyze Panel ====== -->
 <div class="panel active" id="panel-analyze">
 
-  <div class="group-title">🛒 产品信息</div>
+  <div class="group-title with-action"><span>🛒 产品信息</span><span class="gt-link" onclick="newProduct()">＋ 新建</span></div>
   <div class="form-group">
     <label>产品名称 <span class="req">*</span></label>
-    <input id="productName" placeholder="">
+    <input autocomplete="off" id="productName" placeholder="">
   </div>
   <div class="row">
     <div class="form-group">
       <label>ASIN</label>
-      <input id="asin" placeholder="B0XXXXXXXX">
+      <input autocomplete="off" id="asin" placeholder="B0XXXXXXXX">
     </div>
     <div class="form-group">
       <label>重量 <span class="unit">(克)</span> <span class="req">*</span></label>
-      <input id="weightG" type="number" step="1" placeholder="" oninput="autoFillFba();updateLivePrice()">
+      <input autocomplete="off" id="weightG" type="number" step="1" placeholder="" oninput="autoFillFba();updateLivePrice()">
     </div>
   </div>
   <div class="form-group">
@@ -469,14 +487,14 @@
   </div>
   <div class="form-group">
     <label>🔗 亚马逊链接 <span class="unit">(选填 · 存着方便回看)</span></label>
-    <input id="amazonUrl" placeholder="https://www.amazon.de/dp/…">
+    <input autocomplete="off" id="amazonUrl" placeholder="https://www.amazon.de/dp/…">
   </div>
 
   <div class="form-group">
     <label>产品主图 <span class="unit">(选填)</span></label>
     <div class="image-upload-row">
-      <input id="imageUrl" placeholder="图片链接" oninput="previewImageUrl()">
-      <input type="file" id="imageFile" accept="image/*" onchange="handleImageUpload(event)" style="display:none;">
+      <input autocomplete="off" id="imageUrl" placeholder="图片链接" oninput="previewImageUrl()">
+      <input autocomplete="off" type="file" id="imageFile" accept="image/*" onchange="handleImageUpload(event)" style="display:none;">
       <button class="btn btn-sm" onclick="document.getElementById('imageFile').click()" type="button">📁 上传</button>
     </div>
     <div class="image-preview-wrap" id="imagePreview">
@@ -489,30 +507,30 @@
   <div class="row-3">
     <div class="form-group">
       <label>竞品价 <span class="unit">(€)</span></label>
-      <input id="price" type="number" step="0.01" placeholder="10.99" oninput="updateLivePrice()">
+      <input autocomplete="off" id="price" type="number" step="0.01" placeholder="10.99" oninput="updateLivePrice()">
     </div>
     <div class="form-group">
       <label>月销量</label>
-      <input id="monthlySales" type="number" placeholder="850">
+      <input autocomplete="off" id="monthlySales" type="number" placeholder="850">
     </div>
     <div class="form-group">
       <label>评论数</label>
-      <input id="reviewCount" type="number" placeholder="38">
+      <input autocomplete="off" id="reviewCount" type="number" placeholder="38">
     </div>
   </div>
   <div class="row">
     <div class="form-group">
       <label>评分</label>
-      <input id="rating" type="number" step="0.1" min="1" max="5" placeholder="3.9">
+      <input autocomplete="off" id="rating" type="number" step="0.1" min="1" max="5" placeholder="3.9">
     </div>
     <div class="form-group">
       <label>小类排名</label>
-      <input id="rank" type="number" placeholder="12">
+      <input autocomplete="off" id="rank" type="number" placeholder="12">
     </div>
   </div>
   <div class="form-group">
     <label>差评内容 <span class="unit">(每条一行，粘贴关键词或原文)</span></label>
-    <textarea id="negativeReviews" placeholder="例：卡片太薄，容易弯折&#10;颜色跟图片不一样，实物偏暗&#10;包装太差，到货压坏了&#10;尺寸比想象的小"></textarea>
+    <textarea autocomplete="off" id="negativeReviews" placeholder="例：卡片太薄，容易弯折&#10;颜色跟图片不一样，实物偏暗&#10;包装太差，到货压坏了&#10;尺寸比想象的小"></textarea>
   </div>
 
   <div class="collapsible" id="supplierSection">
@@ -536,26 +554,26 @@
       </div>
       <div class="form-group" id="myPriceGroup">
         <label>我的定价 <span class="unit">(€ · 想卖多少填多少，留空用竞品价)</span></label>
-        <input id="myPrice" type="number" step="0.01" placeholder="12.99" oninput="updateLivePrice()">
+        <input autocomplete="off" id="myPrice" type="number" step="0.01" placeholder="12.99" oninput="updateLivePrice()">
         <div class="live-box" id="livePriceBox"></div>
       </div>
       <div class="form-group" id="costGroup">
         <label>1688采购成本 <span class="unit">(¥ 人民币)</span> <span class="req">*</span></label>
-        <input id="cost1688" type="number" step="0.01" placeholder="10.80" oninput="updateLivePrice()">
+        <input autocomplete="off" id="cost1688" type="number" step="0.01" placeholder="10.80" oninput="updateLivePrice()">
       </div>
       <div class="form-group" id="targetMarginGroup" style="display:none;">
         <label>目标利润率 <span class="unit">(%) · ML2达标线，默认30</span></label>
-        <input id="targetMargin" type="number" step="1" value="30" placeholder="30" oninput="updateLivePrice()">
+        <input autocomplete="off" id="targetMargin" type="number" step="1" value="30" placeholder="30" oninput="updateLivePrice()">
       </div>
       <div class="row">
         <div class="form-group">
           <label>FBA配送费 <span class="unit">(€)</span> <span class="req">*</span></label>
-          <input id="fbaFee" type="number" step="0.01" placeholder="2.54" oninput="updateLivePrice()">
+          <input autocomplete="off" id="fbaFee" type="number" step="0.01" placeholder="2.54" oninput="updateLivePrice()">
           <div class="ad-hint" id="fbaHint" style="font-size:11px;color:var(--accent);margin-top:4px;"></div>
         </div>
         <div class="form-group">
           <label>头程单价 <span class="unit">(¥/kg)</span></label>
-          <input id="tcRate" type="number" step="0.1" value="30" placeholder="30" oninput="updateLivePrice()">
+          <input autocomplete="off" id="tcRate" type="number" step="0.1" value="30" placeholder="30" oninput="updateLivePrice()">
         </div>
       </div>
       <div class="collapsible" id="rateTableSection">
@@ -576,7 +594,7 @@
         </div>
         <div class="form-group">
           <label>汇率 <span class="unit">(€→¥)</span></label>
-          <input id="hl" type="number" step="0.01" value="7.3" placeholder="7.3" oninput="updateLivePrice()">
+          <input autocomplete="off" id="hl" type="number" step="0.01" value="7.3" placeholder="7.3" oninput="updateLivePrice()">
         </div>
       </div>
     </div>
@@ -601,6 +619,7 @@
 
 <!-- ====== History Panel ====== -->
 <div class="panel" id="panel-history">
+  <button class="new-product-btn" onclick="newProduct()"><b>＋</b> 新建产品（清空表单从头填）</button>
   <div id="statsPanel"></div>
   <div class="sync-section">
     <div class="sync-title">☁ 云端同步</div>
@@ -617,7 +636,7 @@
         <button class="btn-sync token-btn" onclick="openTokenModal()">🔑 设置 / 更换 Token</button>
         <div class="auto-sync-row">
           <label class="auto-sync-label">
-            <input type="checkbox" id="autoSyncCheck" onchange="toggleAutoSync()">
+            <input autocomplete="off" type="checkbox" id="autoSyncCheck" onchange="toggleAutoSync()">
             <span class="toggle-track"></span>
             分析后自动同步
           </label>
@@ -630,7 +649,7 @@
       </div>
     </div>
   </div>
-  <input type="file" id="importFile" accept=".json" onchange="importData(event)">
+  <input autocomplete="off" type="file" id="importFile" accept=".json" onchange="importData(event)">
   <div id="productList"></div>
 </div>
 
@@ -1234,7 +1253,7 @@ function renderReport(data, r) {
         <button class="btn-o ${mv==='不做'?'skip-active':''}" onclick="overrideVerdict('${data.asin||data.productName}','不做')">🚫 不做</button>
       </div>
       <div class="override-note">
-        <input placeholder="备注原因（选填）" value="${escapeHtml(data.manualNote||'')}" onchange="saveOverrideNote('${data.asin||data.productName}',this.value)">
+        <input autocomplete="off" placeholder="备注原因（选填）" value="${escapeHtml(data.manualNote||'')}" onchange="saveOverrideNote('${data.asin||data.productName}',this.value)">
       </div>
 
       ${compHtml}
@@ -1290,6 +1309,43 @@ function renderProductList() {
       </div>
     `;
   }).join('');
+}
+
+// 清空表单，开一条全新的产品（不会删除任何已保存的记录）
+function newProduct() {
+  ['productName', 'asin', 'price', 'myPrice', 'monthlySales', 'reviewCount',
+   'rating', 'rank', 'cost1688', 'negativeReviews', 'amazonUrl', 'weightG', 'fbaFee']
+    .forEach(id => {
+      const el = document.getElementById(id);
+      if (el) el.value = '';
+    });
+
+  document.getElementById('sizeTier').value = '小包裹';
+  document.getElementById('vatCountry').value = 'DE';
+  document.getElementById('tcRate').value = '30';
+  document.getElementById('hl').value = '7.3';
+  document.getElementById('targetMargin').value = '30';
+
+  const fbaHint = document.getElementById('fbaHint');
+  if (fbaHint) fbaHint.textContent = '';
+  const tierHint = document.getElementById('tierHint');
+  if (tierHint) tierHint.textContent = '';
+
+  document.getElementById('costParamSection').classList.remove('open');
+  document.getElementById('supplierSection').classList.remove('open');
+  clearSuppliers();
+  setProdType('gongmo');
+  clearImage();
+  document.getElementById('reportOutput').innerHTML = '';
+
+  switchTab('analyze');
+  updateLivePrice();
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+  setTimeout(() => {
+    const el = document.getElementById('productName');
+    if (el) el.focus();
+  }, 320);
+  showToast('已清空表单，可以填新产品了');
 }
 
 function viewProduct(index) {
@@ -1466,7 +1522,7 @@ function renderRestoreList() {
     const when = c.at ? new Date(c.at).toLocaleDateString('zh-CN') : '';
     const tag = c.source === 'local' ? '本机' : '云端';
     return `<label class="restore-item">
-      <input type="checkbox" class="restore-check" data-i="${i}" checked onchange="updateRestoreBtn()">
+      <input autocomplete="off" type="checkbox" class="restore-check" data-i="${i}" checked onchange="updateRestoreBtn()">
       <span class="restore-name">${escapeHtml(p.productName || p.asin || '未命名')}</span>
       <span class="restore-time">${tag} · ${when} · 剩 ${left} 天</span>
     </label>`;
@@ -1916,8 +1972,8 @@ function addSupplier(name, url) {
   card.innerHTML = `
     <button class="remove-btn" onclick="this.parentElement.remove()">✕</button>
     <div class="row">
-      <div class="form-group"><label>备注</label><input class="sup-name" placeholder="厂家A ¥8.5" value="${escapeAttr(name || '')}"></div>
-      <div class="form-group"><label>链接</label><input class="sup-url" placeholder="https://detail.1688.com/…" value="${escapeAttr(url || '')}"></div>
+      <div class="form-group"><label>备注</label><input autocomplete="off" class="sup-name" placeholder="厂家A ¥8.5" value="${escapeAttr(name || '')}"></div>
+      <div class="form-group"><label>链接</label><input autocomplete="off" class="sup-url" placeholder="https://detail.1688.com/…" value="${escapeAttr(url || '')}"></div>
     </div>
   `;
   const btn = body.querySelector('.add-comp-btn');
@@ -1961,20 +2017,20 @@ function addCompetitor() {
     <button class="remove-btn" onclick="this.parentElement.remove();competitorCount--;">✕</button>
     <div class="row"><div class="form-group">
       <label>竞品名称 ${competitorCount}</label>
-      <input class="comp-name" placeholder="例：类似产品名">
+      <input autocomplete="off" class="comp-name" placeholder="例：类似产品名">
     </div></div>
     <div class="row-3">
-      <div class="form-group"><label>售价 (€)</label><input class="comp-price" type="number" step="0.01" placeholder="9.99"></div>
-      <div class="form-group"><label>月销量</label><input class="comp-sales" type="number" placeholder="1200"></div>
-      <div class="form-group"><label>评论数</label><input class="comp-reviews" type="number" placeholder="60"></div>
+      <div class="form-group"><label>售价 (€)</label><input autocomplete="off" class="comp-price" type="number" step="0.01" placeholder="9.99"></div>
+      <div class="form-group"><label>月销量</label><input autocomplete="off" class="comp-sales" type="number" placeholder="1200"></div>
+      <div class="form-group"><label>评论数</label><input autocomplete="off" class="comp-reviews" type="number" placeholder="60"></div>
     </div>
     <div class="row-3">
-      <div class="form-group"><label>评分</label><input class="comp-rating" type="number" step="0.1" min="1" max="5" placeholder="4.0"></div>
-      <div class="form-group"><label>重量 (KG)</label><input class="comp-weight" type="number" step="0.01" placeholder="0.10"></div>
-      <div class="form-group"><label>配送费 (€)</label><input class="comp-fba" type="number" step="0.01" placeholder="2.50"></div>
+      <div class="form-group"><label>评分</label><input autocomplete="off" class="comp-rating" type="number" step="0.1" min="1" max="5" placeholder="4.0"></div>
+      <div class="form-group"><label>重量 (KG)</label><input autocomplete="off" class="comp-weight" type="number" step="0.01" placeholder="0.10"></div>
+      <div class="form-group"><label>配送费 (€)</label><input autocomplete="off" class="comp-fba" type="number" step="0.01" placeholder="2.50"></div>
     </div>
     <div class="row"><div class="form-group">
-      <label>1688成本 (¥)</label><input class="comp-cost" type="number" step="0.01" placeholder="8.50">
+      <label>1688成本 (¥)</label><input autocomplete="off" class="comp-cost" type="number" step="0.01" placeholder="8.50">
     </div></div>
   `;
   body.appendChild(card);
@@ -2397,7 +2453,7 @@ function escapeHtml(str) {
     <div class="modal-sub">有了它才能读取和保存你的产品数据（存在你的私有仓库里）。</div>
     <div class="modal-current" id="modalCurrent"></div>
     <div class="token-input-wrap">
-      <input id="tokenInput" type="password" placeholder="粘贴 github_pat_ 开头的 Token" autocomplete="off">
+      <input autocomplete="off" id="tokenInput" type="password" placeholder="粘贴 github_pat_ 开头的 Token" autocomplete="off">
       <button type="button" class="eye" onclick="toggleTokenVisible()" title="显示/隐藏">👁</button>
     </div>
     <div class="modal-msg" id="modalMsg"></div>
