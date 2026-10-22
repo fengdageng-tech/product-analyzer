@@ -626,7 +626,7 @@
           <button class="btn btn-outline btn-sm" style="flex:1" onclick="document.getElementById('importFile').click()">📥 导入</button>
           <button class="btn btn-outline btn-sm" style="flex:1" onclick="exportData()">📤 导出</button>
         </div>
-        <button class="btn-sync" style="width:100%; margin-top:8px;" onclick="restoreDeleted()">♻ 恢复已删除的记录</button>
+        <button class="btn-sync" style="width:100%; margin-top:8px;" onclick="restoreDeleted()">♻ 回收站（删除的记录）</button>
       </div>
     </div>
   </div>
@@ -1371,7 +1371,15 @@ function cloudMerge(remoteList, localList) {
 }
 
 // 从云端删掉指定记录（需要 Token）
-async function deleteFromCloud(key, label) {
+// 判断两条记录是否是同一条（ASIN 或产品名任一相同即可，避免改名后对不上）
+function isSameRecord(a, b) {
+  if (!a || !b) return false;
+  if (a.asin && b.asin && a.asin === b.asin) return true;
+  if (a.productName && b.productName && a.productName === b.productName) return true;
+  return false;
+}
+
+async function deleteFromCloud(rec, label) {
   const token = getToken();
   if (!token) return { skipped: true };
   try {
@@ -1381,10 +1389,13 @@ async function deleteFromCloud(key, label) {
     let found = false;
     const now = Date.now();
     const list = remote.list.map(r => {
-      if ((r.asin || r.productName) === key) { found = true; return Object.assign({}, r, { _deleted: true, _deletedAt: now }); }
+      if (!r._deleted && isSameRecord(r, rec)) {
+        found = true;
+        return Object.assign({}, r, { _deleted: true, _deletedAt: now });
+      }
       return r;
     });
-    if (!found) return { ok: true, changed: false };
+    if (!found) return { ok: true, found: false };
 
     const body = {
       message: '🗑 删除记录：' + String(label || '').slice(0, 40),
@@ -1400,10 +1411,41 @@ async function deleteFromCloud(key, label) {
       },
       body: JSON.stringify(body)
     });
-    return res.ok ? { ok: true, changed: true } : { ok: false, msg: explainCloudError(res.status) };
+    return res.ok ? { ok: true, found: true } : { ok: false, msg: explainCloudError(res.status) };
   } catch (e) {
     return { ok: false, msg: '网络错误' };
   }
+}
+
+// ===== 本机回收站（不依赖 Token，删除后 30 天内可找回）=====
+const TRASH_KEY = 'product_analyzer_trash';
+const TRASH_DAYS = 30;
+
+function loadTrash() {
+  let list = [];
+  try { list = JSON.parse(localStorage.getItem(TRASH_KEY) || '[]'); } catch (e) { list = []; }
+  if (!Array.isArray(list)) list = [];
+  const cutoff = Date.now() - TRASH_DAYS * 86400000;
+  const kept = list.filter(p => (p._trashedAt || 0) > cutoff);
+  if (kept.length !== list.length) {
+    try { localStorage.setItem(TRASH_KEY, JSON.stringify(kept)); } catch (e) {}
+  }
+  return kept;
+}
+
+function saveTrash(list) {
+  try { localStorage.setItem(TRASH_KEY, JSON.stringify(list)); } catch (e) {}
+}
+
+function addToTrash(rec) {
+  if (!rec) return;
+  const list = loadTrash().filter(p => !isSameRecord(p, rec));
+  list.unshift(Object.assign({}, rec, { _trashedAt: Date.now() }));
+  saveTrash(list);
+}
+
+function removeFromTrash(rec) {
+  saveTrash(loadTrash().filter(p => !isSameRecord(p, rec)));
 }
 
 // ===== 恢复已删除记录（可单选） =====
@@ -1417,21 +1459,22 @@ function closeRestoreModal() {
 function renderRestoreList() {
   const box = document.getElementById('restoreList');
   const DAY = 86400000;
-  box.innerHTML = restoreCandidates.map((p, i) => {
-    const when = p._deletedAt ? new Date(p._deletedAt).toLocaleDateString('zh-CN') : '';
-    let left = '';
-    if (p._deletedAt) {
-      const days = Math.max(0, Math.ceil((60 * DAY - (Date.now() - p._deletedAt)) / DAY));
-      left = days > 0 ? `剩 ${days} 天` : '已过期';
-    }
+  box.innerHTML = restoreCandidates.map((c, i) => {
+    const p = c.rec;
+    const limit = c.source === 'local' ? TRASH_DAYS : 60;
+    const left = c.at ? Math.max(0, Math.ceil((limit * DAY - (Date.now() - c.at)) / DAY)) : limit;
+    const when = c.at ? new Date(c.at).toLocaleDateString('zh-CN') : '';
+    const tag = c.source === 'local' ? '本机' : '云端';
     return `<label class="restore-item">
       <input type="checkbox" class="restore-check" data-i="${i}" checked onchange="updateRestoreBtn()">
       <span class="restore-name">${escapeHtml(p.productName || p.asin || '未命名')}</span>
-      <span class="restore-time">${when}${left ? ' · ' + left : ''}</span>
+      <span class="restore-time">${tag} · ${when} · 剩 ${left} 天</span>
     </label>`;
   }).join('');
+  const localN = restoreCandidates.filter(c => c.source === 'local').length;
+  const cloudN = restoreCandidates.length - localN;
   document.getElementById('restoreSub').textContent =
-    `云端有 ${restoreCandidates.length} 条已删除的记录。删除标记保留 60 天后自动清理，也可以直接永久清除：`;
+    `共 ${restoreCandidates.length} 条（本机 ${localN} · 云端 ${cloudN}）。勾选可恢复，也可以永久清除：`;
   updateRestoreBtn();
 }
 
@@ -1445,52 +1488,57 @@ function updateRestoreBtn() {
   purge.disabled = n === 0;
 }
 
-// 永久清除：直接从云端抹掉这些记录，不留删除标记，不可恢复
+// 永久清除：本机回收站和云端标记一起抹掉，不可恢复
 async function doPurge() {
-  const token = getToken();
-  if (!token || !restoreRemote) return;
   const checked = Array.from(document.querySelectorAll('.restore-check:checked')).map(c => Number(c.dataset.i));
   if (!checked.length) return;
-  const keys = new Set(checked.map(i => (restoreCandidates[i].asin || restoreCandidates[i].productName)));
+  const picked = checked.map(i => restoreCandidates[i]);
 
-  if (!confirm(`确定永久清除这 ${checked.length} 条记录吗？\n\n清除后不可恢复，也不会再出现在这个列表里。`)) return;
+  if (!confirm(`确定永久清除这 ${picked.length} 条记录吗？\n\n清除后不可恢复，也不会再出现在回收站里。`)) return;
 
   const msg = document.getElementById('restoreMsg');
   msg.textContent = '⏳ 正在清除…';
   msg.className = 'modal-msg';
 
-  const kept = restoreRemote.list.filter(p => {
-    if (!p._deleted) return true;
-    return !keys.has(p.asin || p.productName);
-  });
+  const token = getToken();
+  const cloudPicked = picked.filter(c => c.source === 'cloud');
 
-  try {
-    const body = {
-      message: '🗑 永久清除 ' + checked.length + ' 条已删除记录',
-      content: btoa(unescape(encodeURIComponent(JSON.stringify(kept, null, 2))))
-    };
-    if (restoreRemote.sha) body.sha = restoreRemote.sha;
-    const res = await fetch(DATA_API, {
-      method: 'PUT',
-      headers: {
-        Authorization: 'Bearer ' + token,
-        Accept: 'application/vnd.github+json',
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify(body)
+  if (token && cloudPicked.length && restoreRemote) {
+    const kept = restoreRemote.list.filter(p => {
+      if (!p._deleted) return true;
+      return !cloudPicked.some(c => isSameRecord(c.rec, p));
     });
-    if (!res.ok) {
-      msg.textContent = explainCloudError(res.status);
+    try {
+      const body = {
+        message: '🗑 永久清除 ' + cloudPicked.length + ' 条已删除记录',
+        content: btoa(unescape(encodeURIComponent(JSON.stringify(kept, null, 2))))
+      };
+      if (restoreRemote.sha) body.sha = restoreRemote.sha;
+      const res = await fetch(DATA_API, {
+        method: 'PUT',
+        headers: {
+          Authorization: 'Bearer ' + token,
+          Accept: 'application/vnd.github+json',
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(body)
+      });
+      if (!res.ok) {
+        msg.textContent = explainCloudError(res.status);
+        msg.className = 'modal-msg err';
+        return;
+      }
+    } catch (e) {
+      msg.textContent = '❌ 网络错误';
       msg.className = 'modal-msg err';
       return;
     }
-    closeRestoreModal();
-    refreshCloudInfo();
-    showToast(`🗑 已永久清除 ${checked.length} 条`);
-  } catch (e) {
-    msg.textContent = '❌ 网络错误';
-    msg.className = 'modal-msg err';
   }
+
+  picked.forEach(c => removeFromTrash(c.rec));
+  closeRestoreModal();
+  refreshCloudInfo();
+  showToast(`🗑 已永久清除 ${picked.length} 条`);
 }
 
 function toggleRestoreAll() {
@@ -1501,26 +1549,35 @@ function toggleRestoreAll() {
 }
 
 async function restoreDeleted() {
+  const trash = loadTrash();
   const token = getToken();
-  if (!token) {
-    showToast('需要先设置 Token 才能恢复云端记录');
-    openTokenModal();
-    return;
-  }
-  showToast('正在读取云端…');
-  let remote;
-  try {
-    remote = await readCloud(token);
-  } catch (e) {
-    showToast('❌ 网络错误');
-    return;
-  }
-  if (!remote.ok) { showToast(explainCloudError(remote.code)); return; }
+  let cloudDead = [];
+  restoreRemote = null;
 
-  // 只捞有实际内容的（合并可能留下只含 key 的空墓碑）
-  restoreCandidates = remote.list.filter(p => p._deleted && (p.result || p.price));
-  restoreRemote = remote;
-  if (!restoreCandidates.length) { showToast('云端没有可恢复的记录'); return; }
+  if (token) {
+    showToast('正在读取回收站…');
+    try {
+      const remote = await readCloud(token);
+      if (remote.ok) {
+        restoreRemote = remote;
+        cloudDead = remote.list.filter(p => p._deleted && (p.result || p.price));
+      }
+    } catch (e) {}
+  }
+
+  // 本机回收站为主体，云端墓碑补充（同一条只列一次）
+  const cands = trash.map(r => ({ rec: r, source: 'local', at: r._trashedAt || 0 }));
+  cloudDead.forEach(p => {
+    if (!cands.some(c => isSameRecord(c.rec, p))) {
+      cands.push({ rec: p, source: 'cloud', at: p._deletedAt || 0 });
+    }
+  });
+  restoreCandidates = cands.sort((a, b) => b.at - a.at);
+
+  if (!restoreCandidates.length) {
+    showToast('回收站是空的');
+    return;
+  }
 
   document.getElementById('restoreMsg').textContent = '';
   document.getElementById('restoreMsg').className = 'modal-msg';
@@ -1529,57 +1586,75 @@ async function restoreDeleted() {
 }
 
 async function doRestore() {
-  const token = getToken();
-  if (!token || !restoreRemote) return;
   const checked = Array.from(document.querySelectorAll('.restore-check:checked')).map(c => Number(c.dataset.i));
   if (!checked.length) return;
-  const keys = new Set(checked.map(i => (restoreCandidates[i].asin || restoreCandidates[i].productName)));
+  const picked = checked.map(i => restoreCandidates[i]);
 
   const msg = document.getElementById('restoreMsg');
   msg.textContent = '⏳ 正在恢复…';
   msg.className = 'modal-msg';
 
-  const revived = restoreRemote.list.map(p => {
-    if (!p._deleted) return p;
-    const k = p.asin || p.productName;
-    if (!keys.has(k)) return p;
-    const copy = Object.assign({}, p);
-    delete copy._deleted;
-    delete copy._deletedAt;
-    return copy;
-  });
+  const token = getToken();
+  const pickedRecs = picked.map(c => c.rec);
+  // 不管是本机回收站还是云端墓碑来的，只要云端还有同一条的删除标记，就一并摘掉，
+  // 否则下次同步会当成"云端已删"再删一次
+  const needCloudRevive = !!restoreRemote &&
+    restoreRemote.list.some(p => p._deleted && pickedRecs.some(r => isSameRecord(r, p)));
 
-  try {
-    const body = {
-      message: '♻ 恢复 ' + checked.length + ' 条记录',
-      content: btoa(unescape(encodeURIComponent(JSON.stringify(revived, null, 2))))
-    };
-    if (restoreRemote.sha) body.sha = restoreRemote.sha;
-    const res = await fetch(DATA_API, {
-      method: 'PUT',
-      headers: {
-        Authorization: 'Bearer ' + token,
-        Accept: 'application/vnd.github+json',
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify(body)
+  // 1) 云端：先把删除标记摘掉
+  if (token && needCloudRevive) {
+    const revived = restoreRemote.list.map(p => {
+      if (!p._deleted) return p;
+      if (!pickedRecs.some(r => isSameRecord(r, p))) return p;
+      const copy = Object.assign({}, p);
+      delete copy._deleted;
+      delete copy._deletedAt;
+      return copy;
     });
-    if (!res.ok) {
-      msg.textContent = explainCloudError(res.status);
+    try {
+      const body = {
+        message: '♻ 恢复 ' + pickedRecs.length + ' 条记录',
+        content: btoa(unescape(encodeURIComponent(JSON.stringify(revived, null, 2))))
+      };
+      if (restoreRemote.sha) body.sha = restoreRemote.sha;
+      const res = await fetch(DATA_API, {
+        method: 'PUT',
+        headers: {
+          Authorization: 'Bearer ' + token,
+          Accept: 'application/vnd.github+json',
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(body)
+      });
+      if (!res.ok) {
+        msg.textContent = explainCloudError(res.status);
+        msg.className = 'modal-msg err';
+        return;
+      }
+    } catch (e) {
+      msg.textContent = '❌ 网络错误';
       msg.className = 'modal-msg err';
       return;
     }
-    const { live } = cloudMerge(revived, loadProducts());
-    saveProducts(live);
-    renderProductList();
-    renderStats();
-    refreshCloudInfo();
-    closeRestoreModal();
-    showToast(`✅ 已恢复 ${checked.length} 条`);
-  } catch (e) {
-    msg.textContent = '❌ 网络错误';
-    msg.className = 'modal-msg err';
   }
+
+  // 2) 本机：写回列表并从回收站移除
+  const products = loadProducts();
+  picked.forEach(c => {
+    const rec = Object.assign({}, c.rec);
+    delete rec._trashedAt;
+    delete rec._deleted;
+    delete rec._deletedAt;
+    if (!products.some(p => isSameRecord(p, rec))) products.unshift(rec);
+    removeFromTrash(c.rec);
+  });
+  saveProducts(products);
+
+  renderProductList();
+  renderStats();
+  refreshCloudInfo();
+  closeRestoreModal();
+  showToast(`✅ 已恢复 ${picked.length} 条`);
 }
 
 async function deleteProduct(id) {
@@ -1587,34 +1662,51 @@ async function deleteProduct(id) {
   const rec = products.find(p => (p.asin || p.productName) === id);
   const choice = await askDelete(rec ? (rec.productName || '未命名') : id, !!getToken());
   if (!choice) return;
+
+  if (rec) addToTrash(rec);
+
   let list = loadProducts().filter(p => (p.asin || p.productName) !== id);
   saveProducts(list);
   document.getElementById('reportOutput').innerHTML = '';
   renderProductList();
   renderStats();
-  if (choice !== 'both') { showToast('已从本机删除（云端保留）'); return; }
+
+  if (choice !== 'both') {
+    showToast('已从本机删除，可在「回收站」找回');
+    return;
+  }
   showToast('正在删除云端记录…');
-  const r = await deleteFromCloud(id, id);
-  if (r.ok) { showToast('已彻底删除（本机 + 云端）'); refreshCloudInfo(); }
-  else { showToast('本机已删，云端失败：' + (r.msg || '')); }
+  const r = await deleteFromCloud(rec || { productName: id }, id);
+  if (!r.ok) { showToast('本机已删、云端失败：' + (r.msg || '') + '（已放进回收站）'); return; }
+  if (r.found === false) { showToast('云端没有这条记录，只删了本机（已放进回收站）'); return; }
+  showToast('已彻底删除（本机 + 云端），回收站可找回');
+  refreshCloudInfo();
 }
 
 async function deleteSingle(index) {
   const products = loadProducts();
   const p = products[index];
   if (!p) return;
-  const key = p.asin || p.productName;
   const choice = await askDelete(p.productName || '未命名', !!getToken());
   if (!choice) return;
+
+  addToTrash(p);
+
   products.splice(index, 1);
   saveProducts(products);
   renderProductList();
   renderStats();
-  if (choice !== 'both') { showToast('已从本机删除（云端保留）'); return; }
+
+  if (choice !== 'both') {
+    showToast('已从本机删除，可在「回收站」找回');
+    return;
+  }
   showToast('正在删除云端记录…');
-  const r = await deleteFromCloud(key, p.productName);
-  if (r.ok) { showToast('已彻底删除（本机 + 云端）'); refreshCloudInfo(); }
-  else { showToast('本机已删，云端失败：' + (r.msg || '')); }
+  const r = await deleteFromCloud(p, p.productName);
+  if (!r.ok) { showToast('本机已删、云端失败：' + (r.msg || '') + '（已放进回收站）'); return; }
+  if (r.found === false) { showToast('云端没有这条记录，只删了本机（已放进回收站）'); return; }
+  showToast('已彻底删除（本机 + 云端），回收站可找回');
+  refreshCloudInfo();
 }
 
 // 删除确认：让用户自己选"只删本机"还是"连云端一起删"
@@ -1623,8 +1715,8 @@ function askDelete(name, hasToken) {
     const mask = document.getElementById('deleteModal');
     document.getElementById('delName').textContent = name;
     document.getElementById('delSub').textContent = hasToken
-      ? '「只删这台设备」：云端那份还在，下次同步会重新出现。\n「本机 + 云端」：彻底删除，其他设备同步后也会消失。'
-      : '这台设备还没设 Token，只能删除本机的记录。';
+      ? '「只删这台设备」：云端仍在，下次同步自动恢复。\n「本机 + 云端一起删」：彻底删除，但会进回收站，30 天内仍可找回。'
+      : '这台设备还没设 Token，只会删除本机记录（仍可在回收站找回）。';
     const btnLocal = document.getElementById('delLocal');
     const btnBoth = document.getElementById('delBoth');
     const btnCancel = document.getElementById('delCancel');
@@ -2270,7 +2362,7 @@ function escapeHtml(str) {
 <!-- 恢复记录弹窗 -->
 <div class="modal-mask" id="restoreModal">
   <div class="modal-box">
-    <div class="modal-title">♻ 恢复已删除的记录</div>
+    <div class="modal-title">♻ 回收站</div>
     <div class="modal-sub" id="restoreSub">勾选要恢复的产品</div>
     <div class="restore-list" id="restoreList"></div>
     <div class="modal-msg" id="restoreMsg"></div>
