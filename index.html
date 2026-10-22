@@ -1864,7 +1864,10 @@ async function refreshCloudInfo() {
       return;
     }
     const last = localStorage.getItem(CLOUD_SEEN_KEY);
-    el.innerHTML = `本机 <b>${localN}</b> 条 · 云端 <b>${remote.list.length}</b> 条`
+    const liveN = remote.list.filter(p => !p._deleted).length;
+    const goneN = remote.list.length - liveN;
+    el.innerHTML = `本机 <b>${localN}</b> 条 · 云端 <b>${liveN}</b> 条`
+      + (goneN > 0 ? `（另有 ${goneN} 条已删除）` : '')
       + (last ? ` · 上次同步 ${last}` : '');
   } catch (e) {
     el.innerHTML = `本机 <b>${localN}</b> 条 · 云端读取失败（检查网络）`;
