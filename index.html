@@ -324,7 +324,7 @@
   }
   @keyframes popIn { from { opacity: 0; transform: translateY(12px) scale(0.98); } to { opacity: 1; transform: none; } }
   .modal-title { font-size: 16px; font-weight: 800; margin-bottom: 4px; }
-  .modal-sub { font-size: 12px; color: var(--muted); margin-bottom: 14px; line-height: 1.6; }
+  .modal-sub { font-size: 12px; color: var(--muted); margin-bottom: 14px; line-height: 1.7; white-space: pre-line; }
   .modal-current {
     font-size: 11px; color: var(--muted); margin-bottom: 10px;
     padding: 8px 10px; border-radius: 8px; background: rgba(255,255,255,0.03);
@@ -1384,19 +1384,19 @@ async function deleteFromCloud(key, label) {
 }
 
 async function deleteProduct(id) {
-  const hasToken = !!getToken();
-  const ask = '确定删除这个产品的分析报告吗？' + (hasToken ? '\n本机和云端都会删除。' : '\n（未设 Token，只删本机）');
-  if (!confirm(ask)) return;
-  let products = loadProducts();
-  products = products.filter(p => (p.asin || p.productName) !== id);
-  saveProducts(products);
+  const products = loadProducts();
+  const rec = products.find(p => (p.asin || p.productName) === id);
+  const choice = await askDelete(rec ? (rec.productName || '未命名') : id, !!getToken());
+  if (!choice) return;
+  let list = loadProducts().filter(p => (p.asin || p.productName) !== id);
+  saveProducts(list);
   document.getElementById('reportOutput').innerHTML = '';
   renderProductList();
   renderStats();
-  if (!hasToken) { showToast('已删除（仅本机）'); return; }
-  showToast('正在同步删除到云端…');
+  if (choice !== 'both') { showToast('已从本机删除（云端保留）'); return; }
+  showToast('正在删除云端记录…');
   const r = await deleteFromCloud(id, id);
-  if (r.ok) { showToast('已删除（本机 + 云端）'); refreshCloudInfo(); }
+  if (r.ok) { showToast('已彻底删除（本机 + 云端）'); refreshCloudInfo(); }
   else { showToast('本机已删，云端失败：' + (r.msg || '')); }
 }
 
@@ -1405,18 +1405,42 @@ async function deleteSingle(index) {
   const p = products[index];
   if (!p) return;
   const key = p.asin || p.productName;
-  const hasToken = !!getToken();
-  const ask = `确定删除「${p.productName || '未命名'}」吗？` + (hasToken ? '\n本机和云端都会删除。' : '\n（未设 Token，只删本机）');
-  if (!confirm(ask)) return;
+  const choice = await askDelete(p.productName || '未命名', !!getToken());
+  if (!choice) return;
   products.splice(index, 1);
   saveProducts(products);
   renderProductList();
   renderStats();
-  if (!hasToken) { showToast('已删除（仅本机）'); return; }
-  showToast('正在同步删除到云端…');
+  if (choice !== 'both') { showToast('已从本机删除（云端保留）'); return; }
+  showToast('正在删除云端记录…');
   const r = await deleteFromCloud(key, p.productName);
-  if (r.ok) { showToast('已删除（本机 + 云端）'); refreshCloudInfo(); }
+  if (r.ok) { showToast('已彻底删除（本机 + 云端）'); refreshCloudInfo(); }
   else { showToast('本机已删，云端失败：' + (r.msg || '')); }
+}
+
+// 删除确认：让用户自己选"只删本机"还是"连云端一起删"
+function askDelete(name, hasToken) {
+  return new Promise(resolve => {
+    const mask = document.getElementById('deleteModal');
+    document.getElementById('delName').textContent = name;
+    document.getElementById('delSub').textContent = hasToken
+      ? '「只删这台设备」：云端那份还在，下次同步会重新出现。\n「本机 + 云端」：彻底删除，其他设备同步后也会消失。'
+      : '这台设备还没设 Token，只能删除本机的记录。';
+    const btnLocal = document.getElementById('delLocal');
+    const btnBoth = document.getElementById('delBoth');
+    const btnCancel = document.getElementById('delCancel');
+    btnBoth.style.display = hasToken ? '' : 'none';
+
+    function done(v) {
+      mask.classList.remove('show');
+      btnLocal.onclick = null; btnBoth.onclick = null; btnCancel.onclick = null;
+      resolve(v);
+    }
+    btnLocal.onclick = () => done('local');
+    btnBoth.onclick = () => done('both');
+    btnCancel.onclick = () => done(null);
+    mask.classList.add('show');
+  });
 }
 
 async function clearAll() {
@@ -2059,6 +2083,19 @@ async function autoPullFromCloud() {
   }
 }
 </script>
+
+<!-- 删除选择弹窗 -->
+<div class="modal-mask" id="deleteModal">
+  <div class="modal-box">
+    <div class="modal-title">删除「<span id="delName"></span>」</div>
+    <div class="modal-sub" id="delSub"></div>
+    <div class="modal-actions" style="flex-direction: column;">
+      <button type="button" id="delLocal">只删这台设备（云端保留，同步会回来）</button>
+      <button type="button" id="delBoth" class="btn-danger2">本机 + 云端一起删（彻底删除）</button>
+      <button type="button" id="delCancel">取消</button>
+    </div>
+  </div>
+</div>
 
 <!-- Token 设置弹窗 -->
 <div class="modal-mask" id="tokenModal">
