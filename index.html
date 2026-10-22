@@ -288,8 +288,39 @@
   .seg.skip { background: var(--red); }
 
   /* GitHub Sync */
-  .sync-section { background: var(--card); border: 1px solid var(--border); border-radius: 10px; padding: 10px 14px; margin-bottom: 14px; }
-  .sync-section .sync-title { font-size: 12px; font-weight: 700; color: var(--accent); margin-bottom: 2px; }
+  .sync-section { background: var(--card); border: 1px solid var(--border); border-radius: 14px; padding: 12px 14px; margin-bottom: 14px; }
+  .sync-head { display: flex; align-items: center; gap: 8px; cursor: pointer; }
+  .sync-section .sync-title { font-size: 12px; font-weight: 600; color: var(--muted); letter-spacing: .3px; }
+  .sync-help {
+    width: 16px; height: 16px; border-radius: 50%; border: 1px solid #4a4b52;
+    background: transparent; color: var(--muted); font-size: 10px; line-height: 1;
+    padding: 0; cursor: pointer; font-family: inherit; flex-shrink: 0;
+  }
+  .sync-help:hover { border-color: var(--muted); color: var(--text); }
+  .sync-badge {
+    font-size: 10px; padding: 2px 7px; border-radius: 20px;
+    background: rgba(217,164,65,.14); color: var(--yellow); font-weight: 600;
+  }
+  .sync-chev { margin-left: auto; color: var(--muted); font-size: 14px; line-height: 1; }
+  .sync-help-card {
+    display: none; font-size: 11px; line-height: 1.7; color: var(--muted);
+    background: rgba(91,139,247,.08); border: 1px solid rgba(91,139,247,.25);
+    border-radius: 10px; padding: 10px 12px; margin-top: 10px;
+  }
+  .sync-help-card.show { display: block; }
+  .sync-help-card b { color: var(--text); }
+  .sync-body { display: none; margin-top: 10px; }
+  .sync-body.open { display: block; }
+  .sync-guide p { font-size: 11px; line-height: 1.7; color: var(--muted); margin-bottom: 10px; }
+  .sync-guide p b { color: var(--text); }
+  .sync-steps { display: flex; gap: 6px; margin-bottom: 12px; }
+  .sync-steps i {
+    flex: 1; font-style: normal; text-align: center;
+    background: var(--input-bg); border: 1px solid var(--border); border-radius: 9px;
+    padding: 8px 4px; font-size: 10.5px; color: var(--muted);
+  }
+  .sync-steps i b { display: block; color: var(--accent); font-size: 12px; margin-bottom: 2px; }
+  .sync-foot { font-size: 10.5px; color: var(--muted); opacity: .8; text-align: center; margin-top: 8px; }
   .sync-section .sync-sub { font-size: 10px; color: var(--muted); margin-bottom: 8px; }
   .sync-row { display: flex; gap: 6px; margin-bottom: 6px; }
   .sync-row input { flex: 1; font-size: 12px; padding: 6px 8px; }
@@ -622,30 +653,58 @@
   <button class="new-product-btn" onclick="newProduct()"><b>＋</b> 新建产品（清空表单从头填）</button>
   <div id="statsPanel"></div>
   <div class="sync-section">
-    <div class="sync-title">☁ 云端同步</div>
-    <div class="cloud-info" id="cloudInfo">本机 0 条 · 云端读取中…</div>
-    <button class="sync-main" id="btnSync" onclick="syncNow()">☁ 同 步</button>
-    <div class="sync-status" id="syncStatus"></div>
+    <div class="sync-head" onclick="toggleSyncPanel()">
+      <span class="sync-title">☁ 云端同步</span>
+      <button type="button" class="sync-help" onclick="event.stopPropagation();toggleSyncHelp()" aria-label="Token 是什么">?</button>
+      <span class="sync-badge" id="syncBadge">需要 Token</span>
+      <span class="sync-chev" id="syncChev">›</span>
+    </div>
 
-    <div class="collapsible" id="advSection">
-      <div class="collapsible-trigger" onclick="this.parentElement.classList.toggle('open')">
-        <span class="arrow">▶</span> ⚙ 备份与高级 <span style="font-size:11px;color:var(--muted)">(Token / 自动同步 / 导入导出)</span>
+    <div class="sync-help-card" id="syncHelpCard">
+      <b>Token 是什么？</b><br>
+      你 GitHub 仓库的钥匙，只保存在这台设备上。<br>
+      到 GitHub → Settings → Developer settings 生成，权限给 Contents 的读写。
+    </div>
+
+    <div class="sync-body" id="syncBody">
+      <div class="cloud-info" id="cloudInfo">本机 0 条 · 云端读取中…</div>
+
+      <div class="sync-guide" id="syncGuide">
+        <p>记录会存在<b>你自己的 GitHub 私有仓库</b>里，别人打开这个网址看不到。</p>
+        <div class="sync-steps">
+          <i><b>1</b>建私有仓库</i>
+          <i><b>2</b>生成 Token</i>
+          <i><b>3</b>粘进来</i>
+        </div>
+        <button class="sync-main" onclick="openTokenModal()">设置 Token</button>
+        <div class="sync-foot">不设置也能用，只是记录只存这台设备</div>
       </div>
-      <div class="collapsible-body">
-        <div class="token-state" id="tokenState"></div>
-        <button class="btn-sync token-btn" onclick="openTokenModal()">🔑 设置 / 更换 Token</button>
-        <div class="auto-sync-row">
-          <label class="auto-sync-label">
-            <input autocomplete="off" type="checkbox" id="autoSyncCheck" onchange="toggleAutoSync()">
-            <span class="toggle-track"></span>
-            分析后自动同步
-          </label>
+
+      <div class="sync-ready" id="syncReady">
+        <button class="sync-main" onclick="syncNow()">☁ 同 步</button>
+      </div>
+      <div class="sync-status" id="syncStatus"></div>
+
+      <div class="collapsible" id="advSection">
+        <div class="collapsible-trigger" onclick="this.parentElement.classList.toggle('open')">
+          <span class="arrow">▶</span> ⚙ 备份与高级
         </div>
-        <div style="display: flex; gap: 8px; margin-top: 10px;">
-          <button class="btn btn-outline btn-sm" style="flex:1" onclick="document.getElementById('importFile').click()">📥 导入</button>
-          <button class="btn btn-outline btn-sm" style="flex:1" onclick="exportData()">📤 导出</button>
+        <div class="collapsible-body">
+          <div class="token-state" id="tokenState"></div>
+          <button class="btn-sync token-btn" onclick="openTokenModal()">🔑 设置 / 更换 Token</button>
+          <div class="auto-sync-row">
+            <label class="auto-sync-label">
+              <input autocomplete="off" type="checkbox" id="autoSyncCheck" onchange="toggleAutoSync()">
+              <span class="toggle-track"></span>
+              分析后自动同步
+            </label>
+          </div>
+          <div style="display: flex; gap: 8px; margin-top: 10px;">
+            <button class="btn btn-outline btn-sm" style="flex:1" onclick="document.getElementById('importFile').click()">📥 导入</button>
+            <button class="btn btn-outline btn-sm" style="flex:1" onclick="exportData()">📤 导出</button>
+          </div>
+          <button class="btn-sync" style="width:100%; margin-top:8px;" onclick="restoreDeleted()">♻ 回收站（删除的记录）</button>
         </div>
-        <button class="btn-sync" style="width:100%; margin-top:8px;" onclick="restoreDeleted()">♻ 回收站（删除的记录）</button>
       </div>
     </div>
   </div>
@@ -2212,6 +2271,49 @@ function clearToken() {
 }
 
 // 读取云端条数 + 显示本机条数，点同步前先心里有数
+// ===== 同步区折叠 / 说明 =====
+let syncUserToggled = false;
+
+function openSyncPanel() {
+  const body = document.getElementById('syncBody');
+  if (!body) return;
+  body.classList.add('open');
+  document.getElementById('syncChev').textContent = '⌃';
+}
+
+function toggleSyncPanel() {
+  const body = document.getElementById('syncBody');
+  if (!body) return;
+  syncUserToggled = true;
+  const open = body.classList.toggle('open');
+  document.getElementById('syncChev').textContent = open ? '⌃' : '›';
+}
+
+function toggleSyncHelp() {
+  document.getElementById('syncHelpCard').classList.toggle('show');
+}
+
+// 没 Token：只留一行 + 三步引导；有 Token：显示同步按钮
+function updateSyncUI() {
+  const has = !!getToken();
+  const badge = document.getElementById('syncBadge');
+  const guide = document.getElementById('syncGuide');
+  const ready = document.getElementById('syncReady');
+  const body = document.getElementById('syncBody');
+  if (!badge || !body) return;
+
+  badge.style.display = has ? 'none' : '';
+  guide.style.display = has ? 'none' : 'block';
+  ready.style.display = has ? 'block' : 'none';
+
+  if (has) {
+    openSyncPanel();
+  } else if (!syncUserToggled) {
+    body.classList.remove('open');
+    document.getElementById('syncChev').textContent = '›';
+  }
+}
+
 async function refreshCloudInfo() {
   const el = document.getElementById('cloudInfo');
   const ts = document.getElementById('tokenState');
@@ -2221,6 +2323,7 @@ async function refreshCloudInfo() {
     ts.className = 'token-state ' + (has ? 'ok' : 'warn');
   }
   updateTokenRemind();
+  updateSyncUI();
   if (!el) return;
   const localN = loadProducts().length;
   if (!has) {
@@ -2310,9 +2413,10 @@ function explainCloudError(code) {
 async function syncNow() {
   const token = getToken();
   if (!token) {
-    setSyncStatus('❌ 需要先设置 Token 才能同步（在下面「⚙ 备份与高级」里）', 'err');
-    showToast('❌ 未设置 Token，同步没发出去');
-    document.getElementById('advSection').classList.add('open');
+    setSyncStatus('❌ 需要先设置 Token 才能同步', 'err');
+    showToast('❌ 未设置 Token，先点「设置 Token」');
+    openSyncPanel();
+    openTokenModal();
     return;
   }
   setSyncStatus('⏳ 同步中…', '');
