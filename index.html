@@ -1256,7 +1256,10 @@ function renderProductList() {
   const container = document.getElementById('productList');
 
   if (products.length === 0) {
-    container.innerHTML = '<div class="empty-state">📭 暂无分析记录<br><span style="font-size:12px;">去「分析产品」页添加你的第一个产品</span></div>';
+    const hint = getToken()
+      ? '<br><span style="font-size:12px;">已设置 Token —— 点「☁ 同步」可拉取云端记录</span>'
+      : '<br><span style="font-size:12px;">去「分析产品」页添加你的第一个产品</span>';
+    container.innerHTML = '<div class="empty-state">📭 本机暂无记录' + hint + '</div>';
     return;
   }
 
@@ -2258,27 +2261,11 @@ function escapeHtml(str) {
   // 表单不再预填示例数据——示例都在各字段的灰色提示（placeholder）里
   updateLivePrice();
   updateTokenRemind();
-  // 已存 Token 时自动从私有仓库拉一次
-  autoPullFromCloud();
+  // 不再自动拉取云端：必须手动点「☁ 同步」，避免删掉的记录一刷新就复活
 })();
 
-// 打开页面时若已存 Token，自动从私有仓库拉一次（没有 Token 就什么都不做）
-async function autoPullFromCloud() {
-  const token = getToken();
-  if (!token) return;
-  try {
-    const remote = await readCloud(token);
-    if (!remote.ok || !remote.list.length) return;
-    const { live } = cloudMerge(remote.list, loadProducts());
-    if (live.length !== loadProducts().length) {
-      saveProducts(live);
-      renderProductList();
-      renderStats();
-    }
-  } catch (e) {
-    // 静默失败：同步是可选功能
-  }
-}
+// 云端数据只在用户主动点「☁ 同步」时拉取（不做自动拉取，避免删掉的记录刷新即复活）
+
 </script>
 
 <!-- 恢复记录弹窗 -->
