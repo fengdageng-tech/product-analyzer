@@ -1316,33 +1316,143 @@ function viewProduct(index) {
   window.scrollTo({ top: 0, behavior: 'smooth' });
 }
 
-function deleteProduct(id) {
-  if (!confirm('确定删除这个产品的分析报告吗？')) return;
+// 合并云端与本机记录。云端带 _deleted 标记的视为"已删除"，
+// 本机若还留着更旧的副本会被一并清掉，避免另一台设备把它同步回来。
+function cloudMerge(remoteList, localList) {
+  const keyOf = p => p.asin || p.productName || '';
+  const graves = new Map();
+  remoteList.forEach(p => { if (p._deleted) graves.set(keyOf(p), p._deletedAt || 0); });
+
+  const map = new Map();
+  remoteList.forEach(p => { if (!p._deleted) map.set(keyOf(p), p); });
+
+  localList.forEach(p => {
+    const k = keyOf(p);
+    const deadAt = graves.get(k);
+    if (deadAt) {
+      const localAt = Date.parse(p.createdAt || '') || 0;
+      if (localAt <= deadAt) return; // 云端已删、本机副本更旧 → 丢弃
+    }
+    map.set(k, p);
+  });
+
+  const live = Array.from(map.values());
+  // 保留 60 天内的墓碑，让其他设备下次同步时也能删除
+  const tombs = [];
+  graves.forEach((t, k) => {
+    if (!map.has(k) && Date.now() - t < 60 * 86400000) {
+      tombs.push({ asin: k, productName: k, _deleted: true, _deletedAt: t });
+    }
+  });
+  return { live, cloud: live.concat(tombs) };
+}
+
+// 从云端删掉指定记录（需要 Token）
+async function deleteFromCloud(key, label) {
+  const token = getToken();
+  if (!token) return { skipped: true };
+  try {
+    const remote = await readCloud(token);
+    if (!remote.ok) return { ok: false, msg: explainCloudError(remote.code) };
+
+    let found = false;
+    const now = Date.now();
+    const list = remote.list.map(r => {
+      if ((r.asin || r.productName) === key) { found = true; return Object.assign({}, r, { _deleted: true, _deletedAt: now }); }
+      return r;
+    });
+    if (!found) return { ok: true, changed: false };
+
+    const body = {
+      message: '🗑 删除记录：' + String(label || '').slice(0, 40),
+      content: btoa(unescape(encodeURIComponent(JSON.stringify(list, null, 2))))
+    };
+    if (remote.sha) body.sha = remote.sha;
+    const res = await fetch(DATA_API, {
+      method: 'PUT',
+      headers: {
+        Authorization: 'Bearer ' + token,
+        Accept: 'application/vnd.github+json',
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(body)
+    });
+    return res.ok ? { ok: true, changed: true } : { ok: false, msg: explainCloudError(res.status) };
+  } catch (e) {
+    return { ok: false, msg: '网络错误' };
+  }
+}
+
+async function deleteProduct(id) {
+  const hasToken = !!getToken();
+  const ask = '确定删除这个产品的分析报告吗？' + (hasToken ? '\n本机和云端都会删除。' : '\n（未设 Token，只删本机）');
+  if (!confirm(ask)) return;
   let products = loadProducts();
   products = products.filter(p => (p.asin || p.productName) !== id);
   saveProducts(products);
   document.getElementById('reportOutput').innerHTML = '';
-  showToast('已删除');
+  renderProductList();
+  renderStats();
+  if (!hasToken) { showToast('已删除（仅本机）'); return; }
+  showToast('正在同步删除到云端…');
+  const r = await deleteFromCloud(id, id);
+  if (r.ok) { showToast('已删除（本机 + 云端）'); refreshCloudInfo(); }
+  else { showToast('本机已删，云端失败：' + (r.msg || '')); }
 }
 
-function deleteSingle(index) {
+async function deleteSingle(index) {
   const products = loadProducts();
   const p = products[index];
   if (!p) return;
-  if (!confirm(`确定删除「${p.productName || '未命名'}」吗？`)) return;
+  const key = p.asin || p.productName;
+  const hasToken = !!getToken();
+  const ask = `确定删除「${p.productName || '未命名'}」吗？` + (hasToken ? '\n本机和云端都会删除。' : '\n（未设 Token，只删本机）');
+  if (!confirm(ask)) return;
   products.splice(index, 1);
   saveProducts(products);
   renderProductList();
   renderStats();
-  showToast('已删除');
+  if (!hasToken) { showToast('已删除（仅本机）'); return; }
+  showToast('正在同步删除到云端…');
+  const r = await deleteFromCloud(key, p.productName);
+  if (r.ok) { showToast('已删除（本机 + 云端）'); refreshCloudInfo(); }
+  else { showToast('本机已删，云端失败：' + (r.msg || '')); }
 }
 
-function clearAll() {
-  if (!confirm('确定删除所有分析记录吗？此操作不可恢复。')) return;
+async function clearAll() {
+  const hasToken = !!getToken();
+  if (!confirm('确定删除这台设备上所有分析记录吗？此操作不可恢复。')) return;
   localStorage.removeItem(STORAGE_KEY);
   document.getElementById('reportOutput').innerHTML = '';
   renderProductList();
-  showToast('已清空全部记录');
+  renderStats();
+
+  if (!hasToken) { showToast('已清空本机记录'); return; }
+  if (!confirm('要同时清空云端的记录吗？\n\n点「确定」= 云端也清空\n点「取消」= 云端保留（下次同步会重新拉回来）')) {
+    showToast('已清空本机，云端保留');
+    refreshCloudInfo();
+    return;
+  }
+  const token = getToken();
+  try {
+    const remote = await readCloud(token);
+    if (!remote.ok) { showToast('云端清空失败：' + explainCloudError(remote.code)); return; }
+    const body = { message: '🗑 清空云端记录', content: btoa('[]') };
+    if (remote.sha) body.sha = remote.sha;
+    const res = await fetch(DATA_API, {
+      method: 'PUT',
+      headers: {
+        Authorization: 'Bearer ' + token,
+        Accept: 'application/vnd.github+json',
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(body)
+    });
+    if (res.ok) { showToast('本机 + 云端都已清空'); refreshCloudInfo(); }
+    else { showToast('本机已清空，云端失败：' + explainCloudError(res.status)); }
+  } catch (e) {
+    showToast('本机已清空，云端失败（网络）');
+  }
 }
 
 function exportData() {
@@ -1840,16 +1950,12 @@ async function syncNow() {
       return;
     }
 
-    // 合并：同名以本机为准，云端独有的保留
-    const keyOf = p => p.asin || p.productName || '';
-    const map = new Map();
-    remote.list.forEach(p => map.set(keyOf(p), p));
-    loadProducts().forEach(p => map.set(keyOf(p), p));
-    const merged = Array.from(map.values());
+    // 合并（云端删除标记优先，避免已删记录被同步回来）
+    const { live, cloud } = cloudMerge(remote.list, loadProducts());
 
     const body = {
       message: '☁ 云同步',
-      content: btoa(unescape(encodeURIComponent(JSON.stringify(merged, null, 2))))
+      content: btoa(unescape(encodeURIComponent(JSON.stringify(cloud, null, 2))))
     };
     if (remote.sha) body.sha = remote.sha;
 
@@ -1869,10 +1975,10 @@ async function syncNow() {
       return;
     }
 
-    saveProducts(merged);
+    saveProducts(live);
     localStorage.setItem(CLOUD_SEEN_KEY, new Date().toLocaleString('zh-CN'));
-    setSyncStatus(`✅ 同步完成：云端共 ${merged.length} 条`, 'ok');
-    showToast('☁ 已同步 ' + merged.length + ' 条');
+    setSyncStatus(`✅ 同步完成：云端共 ${live.length} 条`, 'ok');
+    showToast('☁ 已同步 ' + live.length + ' 条');
     refreshCloudInfo();
     renderProductList();
     renderStats();
@@ -1939,13 +2045,9 @@ async function autoPullFromCloud() {
   try {
     const remote = await readCloud(token);
     if (!remote.ok || !remote.list.length) return;
-    const keyOf = p => p.asin || p.productName || '';
-    const map = new Map();
-    remote.list.forEach(p => map.set(keyOf(p), p));
-    loadProducts().forEach(p => map.set(keyOf(p), p));
-    const merged = Array.from(map.values());
-    if (merged.length !== loadProducts().length) {
-      saveProducts(merged);
+    const { live } = cloudMerge(remote.list, loadProducts());
+    if (live.length !== loadProducts().length) {
+      saveProducts(live);
       renderProductList();
       renderStats();
     }
