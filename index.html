@@ -1414,15 +1414,22 @@ function closeRestoreModal() {
 
 function renderRestoreList() {
   const box = document.getElementById('restoreList');
+  const DAY = 86400000;
   box.innerHTML = restoreCandidates.map((p, i) => {
     const when = p._deletedAt ? new Date(p._deletedAt).toLocaleDateString('zh-CN') : '';
+    let left = '';
+    if (p._deletedAt) {
+      const days = Math.max(0, Math.ceil((60 * DAY - (Date.now() - p._deletedAt)) / DAY));
+      left = days > 0 ? `剩 ${days} 天` : '已过期';
+    }
     return `<label class="restore-item">
       <input type="checkbox" class="restore-check" data-i="${i}" checked onchange="updateRestoreBtn()">
       <span class="restore-name">${escapeHtml(p.productName || p.asin || '未命名')}</span>
-      <span class="restore-time">${when}</span>
+      <span class="restore-time">${when}${left ? ' · ' + left : ''}</span>
     </label>`;
   }).join('');
-  document.getElementById('restoreSub').textContent = `云端有 ${restoreCandidates.length} 条已删除的记录，勾选要恢复的：`;
+  document.getElementById('restoreSub').textContent =
+    `云端有 ${restoreCandidates.length} 条已删除的记录。删除标记保留 60 天后自动清理，也可以直接永久清除：`;
   updateRestoreBtn();
 }
 
@@ -1431,6 +1438,57 @@ function updateRestoreBtn() {
   const btn = document.getElementById('restoreBtn');
   btn.textContent = `恢复选中（${n}）`;
   btn.disabled = n === 0;
+  const purge = document.getElementById('purgeBtn');
+  purge.textContent = `永久清除选中（${n}）`;
+  purge.disabled = n === 0;
+}
+
+// 永久清除：直接从云端抹掉这些记录，不留删除标记，不可恢复
+async function doPurge() {
+  const token = getToken();
+  if (!token || !restoreRemote) return;
+  const checked = Array.from(document.querySelectorAll('.restore-check:checked')).map(c => Number(c.dataset.i));
+  if (!checked.length) return;
+  const keys = new Set(checked.map(i => (restoreCandidates[i].asin || restoreCandidates[i].productName)));
+
+  if (!confirm(`确定永久清除这 ${checked.length} 条记录吗？\n\n清除后不可恢复，也不会再出现在这个列表里。`)) return;
+
+  const msg = document.getElementById('restoreMsg');
+  msg.textContent = '⏳ 正在清除…';
+  msg.className = 'modal-msg';
+
+  const kept = restoreRemote.list.filter(p => {
+    if (!p._deleted) return true;
+    return !keys.has(p.asin || p.productName);
+  });
+
+  try {
+    const body = {
+      message: '🗑 永久清除 ' + checked.length + ' 条已删除记录',
+      content: btoa(unescape(encodeURIComponent(JSON.stringify(kept, null, 2))))
+    };
+    if (restoreRemote.sha) body.sha = restoreRemote.sha;
+    const res = await fetch(DATA_API, {
+      method: 'PUT',
+      headers: {
+        Authorization: 'Bearer ' + token,
+        Accept: 'application/vnd.github+json',
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(body)
+    });
+    if (!res.ok) {
+      msg.textContent = explainCloudError(res.status);
+      msg.className = 'modal-msg err';
+      return;
+    }
+    closeRestoreModal();
+    refreshCloudInfo();
+    showToast(`🗑 已永久清除 ${checked.length} 条`);
+  } catch (e) {
+    msg.textContent = '❌ 网络错误';
+    msg.className = 'modal-msg err';
+  }
 }
 
 function toggleRestoreAll() {
@@ -2234,6 +2292,9 @@ async function autoPullFromCloud() {
       <button type="button" style="font-size:12px;white-space:nowrap;" onclick="toggleRestoreAll()">全选/全不选</button>
       <button type="button" onclick="closeRestoreModal()">取消</button>
       <button type="button" class="btn-solid" id="restoreBtn" onclick="doRestore()">恢复选中</button>
+    </div>
+    <div class="modal-actions" style="margin-top:6px;">
+      <button type="button" class="btn-danger2" id="purgeBtn" onclick="doPurge()">永久清除选中</button>
     </div>
   </div>
 </div>
