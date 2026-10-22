@@ -349,6 +349,27 @@
   }
   .modal-actions .btn-solid { background: var(--accent); color: #0f172a; border-color: var(--accent); }
   .modal-actions .btn-danger2 { color: var(--red); border-color: rgba(248,113,113,0.4); }
+
+  /* 恢复记录列表 */
+  .restore-list {
+    max-height: 40vh; overflow-y: auto; margin-bottom: 6px;
+    border: 1px solid var(--border); border-radius: 8px;
+  }
+  .restore-item {
+    display: flex; align-items: center; gap: 10px;
+    padding: 10px 12px; border-bottom: 1px solid var(--border);
+    cursor: pointer; font-size: 13px;
+  }
+  .restore-item:last-child { border-bottom: none; }
+  .restore-item input.restore-check {
+    -webkit-appearance: auto !important;
+    appearance: auto !important;
+    width: 17px; height: 17px; flex-shrink: 0; margin: 0;
+    accent-color: var(--accent); cursor: pointer;
+  }
+  .restore-name { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .restore-time { font-size: 11px; color: var(--muted); flex-shrink: 0; }
+  .modal-actions button:disabled { opacity: 0.4; cursor: not-allowed; }
   .auto-sync-row { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 6px; margin-top: 6px; padding-top: 6px; border-top: 1px solid var(--border); }
   .auto-sync-label { display: flex; align-items: center; gap: 8px; font-size: 11px; color: var(--muted); cursor: pointer; user-select: none; white-space: nowrap; }
   /* Custom toggle */
@@ -605,7 +626,6 @@
         <div style="display: flex; gap: 8px; margin-top: 10px;">
           <button class="btn btn-outline btn-sm" style="flex:1" onclick="document.getElementById('importFile').click()">📥 导入</button>
           <button class="btn btn-outline btn-sm" style="flex:1" onclick="exportData()">📤 导出</button>
-          <button class="btn btn-outline btn-sm" style="flex:1; border-color: var(--red); color: var(--red)" onclick="clearAll()">🗑 清空</button>
         </div>
         <button class="btn-sync" style="width:100%; margin-top:8px;" onclick="restoreDeleted()">♻ 恢复已删除的记录</button>
       </div>
@@ -1384,7 +1404,42 @@ async function deleteFromCloud(key, label) {
   }
 }
 
-// 恢复云端带删除标记的记录（误删找回）
+// ===== 恢复已删除记录（可单选） =====
+let restoreRemote = null;   // { list, sha }
+let restoreCandidates = []; // 可恢复的记录
+
+function closeRestoreModal() {
+  document.getElementById('restoreModal').classList.remove('show');
+}
+
+function renderRestoreList() {
+  const box = document.getElementById('restoreList');
+  box.innerHTML = restoreCandidates.map((p, i) => {
+    const when = p._deletedAt ? new Date(p._deletedAt).toLocaleDateString('zh-CN') : '';
+    return `<label class="restore-item">
+      <input type="checkbox" class="restore-check" data-i="${i}" checked onchange="updateRestoreBtn()">
+      <span class="restore-name">${escapeHtml(p.productName || p.asin || '未命名')}</span>
+      <span class="restore-time">${when}</span>
+    </label>`;
+  }).join('');
+  document.getElementById('restoreSub').textContent = `云端有 ${restoreCandidates.length} 条已删除的记录，勾选要恢复的：`;
+  updateRestoreBtn();
+}
+
+function updateRestoreBtn() {
+  const n = document.querySelectorAll('.restore-check:checked').length;
+  const btn = document.getElementById('restoreBtn');
+  btn.textContent = `恢复选中（${n}）`;
+  btn.disabled = n === 0;
+}
+
+function toggleRestoreAll() {
+  const boxes = Array.from(document.querySelectorAll('.restore-check'));
+  const allChecked = boxes.every(b => b.checked);
+  boxes.forEach(b => { b.checked = !allChecked; });
+  updateRestoreBtn();
+}
+
 async function restoreDeleted() {
   const token = getToken();
   if (!token) {
@@ -1402,16 +1457,32 @@ async function restoreDeleted() {
   }
   if (!remote.ok) { showToast(explainCloudError(remote.code)); return; }
 
-  // 只捞有实际内容的（云端合并可能留下只含 key 的空墓碑）
-  const dead = remote.list.filter(p => p._deleted && (p.result || p.price));
-  if (!dead.length) { showToast('云端没有可恢复的记录'); return; }
+  // 只捞有实际内容的（合并可能留下只含 key 的空墓碑）
+  restoreCandidates = remote.list.filter(p => p._deleted && (p.result || p.price));
+  restoreRemote = remote;
+  if (!restoreCandidates.length) { showToast('云端没有可恢复的记录'); return; }
 
-  const preview = dead.slice(0, 5).map(p => '· ' + String(p.productName || p.asin || '').slice(0, 40)).join('\n');
-  const more = dead.length > 5 ? `\n…共 ${dead.length} 条` : '';
-  if (!confirm(`云端有 ${dead.length} 条已删除的记录，全部恢复吗？\n\n${preview}${more}`)) return;
+  document.getElementById('restoreMsg').textContent = '';
+  document.getElementById('restoreMsg').className = 'modal-msg';
+  renderRestoreList();
+  document.getElementById('restoreModal').classList.add('show');
+}
 
-  const revived = remote.list.map(p => {
+async function doRestore() {
+  const token = getToken();
+  if (!token || !restoreRemote) return;
+  const checked = Array.from(document.querySelectorAll('.restore-check:checked')).map(c => Number(c.dataset.i));
+  if (!checked.length) return;
+  const keys = new Set(checked.map(i => (restoreCandidates[i].asin || restoreCandidates[i].productName)));
+
+  const msg = document.getElementById('restoreMsg');
+  msg.textContent = '⏳ 正在恢复…';
+  msg.className = 'modal-msg';
+
+  const revived = restoreRemote.list.map(p => {
     if (!p._deleted) return p;
+    const k = p.asin || p.productName;
+    if (!keys.has(k)) return p;
     const copy = Object.assign({}, p);
     delete copy._deleted;
     delete copy._deletedAt;
@@ -1420,10 +1491,10 @@ async function restoreDeleted() {
 
   try {
     const body = {
-      message: '♻ 恢复已删除记录',
+      message: '♻ 恢复 ' + checked.length + ' 条记录',
       content: btoa(unescape(encodeURIComponent(JSON.stringify(revived, null, 2))))
     };
-    if (remote.sha) body.sha = remote.sha;
+    if (restoreRemote.sha) body.sha = restoreRemote.sha;
     const res = await fetch(DATA_API, {
       method: 'PUT',
       headers: {
@@ -1433,16 +1504,21 @@ async function restoreDeleted() {
       },
       body: JSON.stringify(body)
     });
-    if (!res.ok) { showToast('恢复失败：' + explainCloudError(res.status)); return; }
-
+    if (!res.ok) {
+      msg.textContent = explainCloudError(res.status);
+      msg.className = 'modal-msg err';
+      return;
+    }
     const { live } = cloudMerge(revived, loadProducts());
     saveProducts(live);
     renderProductList();
     renderStats();
     refreshCloudInfo();
-    showToast(`✅ 已恢复 ${dead.length} 条`);
+    closeRestoreModal();
+    showToast(`✅ 已恢复 ${checked.length} 条`);
   } catch (e) {
-    showToast('❌ 网络错误');
+    msg.textContent = '❌ 网络错误';
+    msg.className = 'modal-msg err';
   }
 }
 
@@ -2146,6 +2222,21 @@ async function autoPullFromCloud() {
   }
 }
 </script>
+
+<!-- 恢复记录弹窗 -->
+<div class="modal-mask" id="restoreModal">
+  <div class="modal-box">
+    <div class="modal-title">♻ 恢复已删除的记录</div>
+    <div class="modal-sub" id="restoreSub">勾选要恢复的产品</div>
+    <div class="restore-list" id="restoreList"></div>
+    <div class="modal-msg" id="restoreMsg"></div>
+    <div class="modal-actions">
+      <button type="button" style="font-size:12px;white-space:nowrap;" onclick="toggleRestoreAll()">全选/全不选</button>
+      <button type="button" onclick="closeRestoreModal()">取消</button>
+      <button type="button" class="btn-solid" id="restoreBtn" onclick="doRestore()">恢复选中</button>
+    </div>
+  </div>
+</div>
 
 <!-- 删除选择弹窗 -->
 <div class="modal-mask" id="deleteModal">
