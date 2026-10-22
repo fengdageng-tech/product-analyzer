@@ -280,11 +280,16 @@
   .btn-sync.up { border-color: var(--accent); color: var(--accent); }
   .btn-sync.down { border-color: var(--green); color: var(--green); }
   .btn-sync:active { transform: scale(0.97); opacity: 0.8; }
-  .sync-status { font-size: 11px; margin-top: 4px; min-height: 16px; }
+  .sync-status { font-size: 11px; margin-top: 4px; min-height: 16px; flex-basis: 100%; line-height: 1.5; }
   .sync-status.ok { color: var(--green); }
   .sync-status.err { color: var(--red); }
-  .auto-sync-row { display: flex; align-items: center; justify-content: space-between; margin-top: 6px; padding-top: 6px; border-top: 1px solid var(--border); }
-  .auto-sync-label { display: flex; align-items: center; gap: 8px; font-size: 11px; color: var(--muted); cursor: pointer; user-select: none; }
+  .cloud-info { font-size: 12px; color: var(--muted); margin-bottom: 6px; }
+  .cloud-info b { color: var(--accent); }
+  .token-state { font-size: 11px; margin-bottom: 8px; }
+  .token-state.ok { color: var(--green); }
+  .token-state.warn { color: var(--yellow); }
+  .auto-sync-row { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 6px; margin-top: 6px; padding-top: 6px; border-top: 1px solid var(--border); }
+  .auto-sync-label { display: flex; align-items: center; gap: 8px; font-size: 11px; color: var(--muted); cursor: pointer; user-select: none; white-space: nowrap; }
   /* Custom toggle */
   .auto-sync-label input[type=checkbox] { display: none; }
   .toggle-track { width: 36px; height: 20px; border-radius: 10px; background: var(--border); position: relative; transition: background 0.2s; flex-shrink: 0; }
@@ -514,10 +519,12 @@
   <div id="statsPanel"></div>
   <div class="sync-section">
     <div class="sync-title">☁ 云端同步</div>
-    <div class="sync-sub">下载免登录 · 上传需 Token（<span class="token-link" onclick="showTokenPrompt()">设置</span>）</div>
+    <div class="sync-sub">下载免登录（读公开文件）· 上传需 Token（<span class="token-link" onclick="showTokenPrompt()">设置</span>）</div>
+    <div class="cloud-info" id="cloudInfo">本机 0 条 · 云端读取中…</div>
+    <div class="token-state" id="tokenState"></div>
     <div class="sync-row">
-      <button class="btn-sync up" id="btnUpload" onclick="uploadToGithub()">☁ 上传</button>
-      <button class="btn-sync down" id="btnDownload" onclick="downloadFromGithub()">⬇ 下载</button>
+      <button class="btn-sync down" id="btnDownload" onclick="downloadFromGithub()">⬇ 下载到本机</button>
+      <button class="btn-sync up" id="btnUpload" onclick="uploadToGithub()">☁ 上传到云端</button>
     </div>
     <div id="tokenRow" style="display:none;">
       <div class="sync-row">
@@ -1573,8 +1580,10 @@ function renderStats() {
 
 // ==================== GITHUB SYNC ====================
 const GITHUB_API = 'https://api.github.com/repos/fengdageng-tech/product-analyzer/contents/data.json';
+const PAGES_DATA_URL = 'https://fengdageng-tech.github.io/product-analyzer/data.json';
 const TOKEN_KEY = 'github_sync_token';
 const AUTO_SYNC_KEY = 'github_auto_sync';
+const CLOUD_SEEN_KEY = 'cloud_last_seen';
 
 function getToken() {
   return localStorage.getItem(TOKEN_KEY) || '';
@@ -1585,8 +1594,33 @@ function saveToken() {
   if (!token) { setSyncStatus('请输入 Token', 'err'); return; }
   localStorage.setItem(TOKEN_KEY, token);
   document.getElementById('githubToken').value = '';
+  document.getElementById('tokenRow').style.display = 'none';
   setSyncStatus('Token 已保存 ✅', 'ok');
   initSyncUI();
+}
+
+// 读取云端条数 + 显示本机条数，点同步前先心里有数
+async function refreshCloudInfo() {
+  const el = document.getElementById('cloudInfo');
+  const ts = document.getElementById('tokenState');
+  if (ts) {
+    const has = !!getToken();
+    ts.textContent = has ? 'Token：已设置 ✅' : 'Token：未设置 ⚠️ 上传需要它，下载不需要';
+    ts.className = 'token-state ' + (has ? 'ok' : 'warn');
+  }
+  if (!el) return;
+  const localN = loadProducts().length;
+  el.innerHTML = `本机 <b>${localN}</b> 条 · 云端读取中…`;
+  try {
+    const res = await fetch(PAGES_DATA_URL + '?_=' + Date.now(), { cache: 'no-cache' });
+    if (!res.ok) throw new Error(String(res.status));
+    const remote = await res.json();
+    const last = localStorage.getItem(CLOUD_SEEN_KEY);
+    el.innerHTML = `本机 <b>${localN}</b> 条 · 云端 <b>${Array.isArray(remote) ? remote.length : 0}</b> 条`
+      + (last ? ` · 上次同步 ${last}` : '');
+  } catch (e) {
+    el.innerHTML = `本机 <b>${localN}</b> 条 · 云端读取失败（检查网络）`;
+  }
 }
 
 function toggleAutoSync() {
@@ -1611,18 +1645,44 @@ function setSyncStatus(msg, cls) {
 
 async function uploadToGithub() {
   const token = getToken();
-  if (!token) { showTokenPrompt(); return; }
-  setSyncStatus('⏳ 上传中...', '');
+  if (!token) {
+    setSyncStatus('❌ 还没设置 Token —— 上传必须要有它，这次没有发出去', 'err');
+    showToast('❌ 未设置 Token，上传没发出去');
+    showTokenPrompt();
+    return;
+  }
+  setSyncStatus('⏳ 读取云端后合并上传…', '');
   try {
-    const products = loadProducts();
-    const content = btoa(unescape(encodeURIComponent(JSON.stringify(products, null, 2))));
-    // Get current file sha
-    let sha = null;
+    // 先读云端（公开读，不需要 token），避免覆盖掉别的设备上传的记录
+    let remote = [];
     try {
-      const getRes = await fetch(GITHUB_API, { headers: { Authorization: 'Bearer ' + token } });
-      if (getRes.ok) { const info = await getRes.json(); sha = info.sha; }
-    } catch(e) {}
-    // Put file
+      const r = await fetch(PAGES_DATA_URL + '?_=' + Date.now(), { cache: 'no-cache' });
+      if (r.ok) { const d = await r.json(); if (Array.isArray(d)) remote = d; }
+    } catch (e) {}
+
+    const keyOf = p => p.asin || p.productName || '';
+    const map = new Map();
+    remote.forEach(p => map.set(keyOf(p), p));   // 云端原有
+    loadProducts().forEach(p => map.set(keyOf(p), p)); // 本机版本优先覆盖同名
+    const merged = Array.from(map.values());
+
+    const content = btoa(unescape(encodeURIComponent(JSON.stringify(merged, null, 2))));
+    let sha = null;
+    const getRes = await fetch(GITHUB_API, { headers: { Authorization: 'Bearer ' + token } });
+
+    if (getRes.status === 401) {
+      setSyncStatus('❌ Token 无效或已过期，请重新生成一个再粘进来', 'err');
+      showToast('❌ Token 失效');
+      showTokenPrompt();
+      return;
+    }
+    if (getRes.status === 403 || getRes.status === 404) {
+      setSyncStatus('❌ Token 权限不足：需要该仓库 Contents 的读+写权限', 'err');
+      showToast('❌ Token 权限不够');
+      return;
+    }
+    if (getRes.ok) { const info = await getRes.json(); sha = info.sha; }
+
     const body = { message: '☁ 云同步', content };
     if (sha) body.sha = sha;
     const res = await fetch(GITHUB_API, {
@@ -1630,35 +1690,50 @@ async function uploadToGithub() {
       headers: { Authorization: 'Bearer ' + token, 'Content-Type': 'application/json' },
       body: JSON.stringify(body)
     });
+
     if (res.ok) {
-      setSyncStatus('✅ 已上传云端 · ' + new Date().toLocaleTimeString('zh-CN'), 'ok');
-      showToast('☁ 已同步到云端');
+      saveProducts(merged);
+      localStorage.setItem(CLOUD_SEEN_KEY, new Date().toLocaleString('zh-CN'));
+      setSyncStatus(`✅ 已上传 ${merged.length} 条（云端原有 ${remote.length} 条，已合并）`, 'ok');
+      showToast('☁ 已同步 ' + merged.length + ' 条');
+      refreshCloudInfo();
+      renderProductList();
+      renderStats();
     } else if (res.status === 401) {
-      setSyncStatus('Token 无效，请重新设置', 'err');
+      setSyncStatus('❌ Token 无效或已过期，请重新生成一个再粘进来', 'err');
+      showToast('❌ Token 失效');
       showTokenPrompt();
+    } else if (res.status === 403 || res.status === 404) {
+      setSyncStatus('❌ Token 权限不足：需要该仓库 Contents 的读+写权限', 'err');
+      showToast('❌ Token 权限不够');
     } else {
-      const err = await res.json();
-      setSyncStatus('上传失败: ' + (err.message || res.status), 'err');
+      const err = await res.json().catch(() => ({}));
+      setSyncStatus('❌ 上传失败：' + (err.message || ('HTTP ' + res.status)), 'err');
+      showToast('❌ 上传失败 ' + res.status);
     }
-  } catch(e) {
-    setSyncStatus('网络错误，请稍后重试', 'err');
+  } catch (e) {
+    setSyncStatus('❌ 网络错误：连不上 GitHub，可能需要挂代理', 'err');
+    showToast('❌ 网络错误，上传失败');
   }
 }
 
 async function downloadFromGithub() {
-  setSyncStatus('⏳ 下载中...', '');
+  setSyncStatus('⏳ 下载中…', '');
   try {
-    // Download from GitHub Pages — no token needed (public read)
-    const url = 'https://fengdageng-tech.github.io/product-analyzer/data.json?_=' + Date.now();
-    const res = await fetch(url);
+    // 从 GitHub Pages 读公开文件，不需要 token
+    const res = await fetch(PAGES_DATA_URL + '?_=' + Date.now(), { cache: 'no-cache' });
     if (!res.ok) {
-      if (res.status === 404) { setSyncStatus('云端暂无数据，请先在电脑上传', 'err'); }
-      else { setSyncStatus('下载失败: ' + res.status, 'err'); }
+      setSyncStatus(res.status === 404 ? '❌ 云端暂无数据，请先在电脑上「上传」一次' : '❌ 下载失败 HTTP ' + res.status, 'err');
       return;
     }
     const remote = await res.json();
     if (!Array.isArray(remote)) throw new Error('格式错误');
-    // Merge: remote data wins for same asin
+    if (remote.length === 0) {
+      setSyncStatus('⚠️ 云端是空的（0 条）—— 先在那台有数据的设备上点「上传」', 'err');
+      showToast('⚠️ 云端还是空的，没有可下载的记录');
+      return;
+    }
+    // 合并：同名以云端为准，本机独有记录保留
     const local = loadProducts();
     const merged = [...remote];
     const seen = new Set(merged.map(p => p.asin || p.productName || ''));
@@ -1667,12 +1742,14 @@ async function downloadFromGithub() {
       if (!seen.has(key)) { merged.push(p); seen.add(key); }
     });
     saveProducts(merged);
+    localStorage.setItem(CLOUD_SEEN_KEY, new Date().toLocaleString('zh-CN'));
     renderProductList();
     renderStats();
-    setSyncStatus('✅ 已同步 ' + remote.length + '条记录', 'ok');
-    showToast('⬇ 已同步 ' + remote.length + '条');
+    refreshCloudInfo();
+    setSyncStatus(`✅ 已从云端同步 ${remote.length} 条，本机现共 ${merged.length} 条`, 'ok');
+    showToast('⬇ 已同步 ' + remote.length + ' 条');
   } catch(e) {
-    setSyncStatus('下载失败，网络错误或云端无数据', 'err');
+    setSyncStatus('❌ 下载失败：网络错误', 'err');
   }
 }
 
@@ -1686,6 +1763,7 @@ function initSyncUI() {
   document.getElementById('tokenRow').style.display = hasToken ? 'none' : 'block';
   document.getElementById('autoSyncCheck').checked = isAutoSync();
   document.getElementById('githubToken').value = '';
+  refreshCloudInfo();
 }
 
 // ==================== UTILS ====================
