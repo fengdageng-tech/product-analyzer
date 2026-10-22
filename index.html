@@ -307,6 +307,48 @@
     color: rgba(56,189,248,0.6); cursor: pointer;
     text-decoration: underline; text-underline-offset: 2px;
   }
+
+  .token-btn { width: 100%; margin-bottom: 8px; padding: 9px 12px; font-size: 12px; }
+
+  /* Token 弹窗 */
+  .modal-mask {
+    position: fixed; inset: 0; background: rgba(0,0,0,0.65);
+    display: none; align-items: center; justify-content: center;
+    padding: 20px; z-index: 1000;
+  }
+  .modal-mask.show { display: flex; }
+  .modal-box {
+    width: 100%; max-width: 420px; background: var(--card);
+    border: 1px solid var(--border); border-radius: 14px;
+    padding: 20px; animation: popIn 0.18s ease;
+  }
+  @keyframes popIn { from { opacity: 0; transform: translateY(12px) scale(0.98); } to { opacity: 1; transform: none; } }
+  .modal-title { font-size: 16px; font-weight: 800; margin-bottom: 4px; }
+  .modal-sub { font-size: 12px; color: var(--muted); margin-bottom: 14px; line-height: 1.6; }
+  .modal-current {
+    font-size: 11px; color: var(--muted); margin-bottom: 10px;
+    padding: 8px 10px; border-radius: 8px; background: rgba(255,255,255,0.03);
+    border: 1px solid var(--border); word-break: break-all;
+  }
+  .modal-current code { color: var(--accent); font-size: 11px; }
+  .token-input-wrap { position: relative; }
+  .token-input-wrap input { padding-right: 44px; font-size: 13px; }
+  .token-input-wrap .eye {
+    position: absolute; right: 6px; top: 50%; transform: translateY(-50%);
+    background: transparent; border: none; color: var(--muted);
+    font-size: 15px; cursor: pointer; padding: 6px;
+  }
+  .modal-msg { font-size: 12px; min-height: 18px; margin: 8px 0 4px; line-height: 1.5; }
+  .modal-msg.ok { color: var(--green); }
+  .modal-msg.err { color: var(--red); }
+  .modal-actions { display: flex; gap: 8px; margin-top: 12px; }
+  .modal-actions button {
+    flex: 1; padding: 11px; border-radius: 8px; font-size: 13px; font-weight: 700;
+    cursor: pointer; font-family: inherit; border: 1px solid var(--border);
+    background: transparent; color: var(--text);
+  }
+  .modal-actions .btn-solid { background: var(--accent); color: #0f172a; border-color: var(--accent); }
+  .modal-actions .btn-danger2 { color: var(--red); border-color: rgba(248,113,113,0.4); }
   .auto-sync-row { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 6px; margin-top: 6px; padding-top: 6px; border-top: 1px solid var(--border); }
   .auto-sync-label { display: flex; align-items: center; gap: 8px; font-size: 11px; color: var(--muted); cursor: pointer; user-select: none; white-space: nowrap; }
   /* Custom toggle */
@@ -552,12 +594,7 @@
       </div>
       <div class="collapsible-body">
         <div class="token-state" id="tokenState"></div>
-        <div id="tokenRow" style="display:none;">
-          <div class="sync-row">
-            <input id="githubToken" type="password" placeholder="粘贴 GitHub Token">
-            <button class="btn-sync" onclick="saveToken()">💾 保存</button>
-          </div>
-        </div>
+        <button class="btn-sync token-btn" onclick="openTokenModal()">🔑 设置 / 更换 Token</button>
         <div class="auto-sync-row">
           <label class="auto-sync-label">
             <input type="checkbox" id="autoSyncCheck" onchange="toggleAutoSync()">
@@ -1618,13 +1655,79 @@ function getToken() {
 }
 
 function saveToken() {
-  const token = document.getElementById('githubToken').value.trim();
-  if (!token) { setSyncStatus('请输入 Token', 'err'); return; }
-  localStorage.setItem(TOKEN_KEY, token);
-  document.getElementById('githubToken').value = '';
-  document.getElementById('tokenRow').style.display = 'none';
-  setSyncStatus('Token 已保存 ✅', 'ok');
+  openTokenModal();
+}
+
+// ===== Token 弹窗 =====
+function maskToken(t) {
+  if (!t) return '';
+  return t.length <= 14 ? t.slice(0, 4) + '…' : t.slice(0, 12) + '…' + t.slice(-4);
+}
+
+function openTokenModal() {
+  const t = getToken();
+  const cur = document.getElementById('modalCurrent');
+  cur.innerHTML = t
+    ? '当前这台设备已保存：<code>' + escapeHtml(maskToken(t)) + '</code>'
+    : '当前这台设备：<b style="color:var(--yellow)">尚未设置</b>';
+  document.getElementById('tokenInput').value = '';
+  document.getElementById('tokenInput').type = 'password';
+  const msg = document.getElementById('modalMsg');
+  msg.textContent = '';
+  msg.className = 'modal-msg';
+  document.getElementById('tokenModal').classList.add('show');
+  setTimeout(() => document.getElementById('tokenInput').focus(), 180);
+}
+
+function closeTokenModal() {
+  document.getElementById('tokenModal').classList.remove('show');
+}
+
+function toggleTokenVisible() {
+  const el = document.getElementById('tokenInput');
+  el.type = el.type === 'password' ? 'text' : 'password';
+}
+
+async function saveTokenAndTest() {
+  const val = document.getElementById('tokenInput').value.trim();
+  const msg = document.getElementById('modalMsg');
+  if (!val) {
+    msg.textContent = '请先粘贴 Token';
+    msg.className = 'modal-msg err';
+    return;
+  }
+  msg.textContent = '⏳ 正在验证…';
+  msg.className = 'modal-msg';
+  localStorage.setItem(TOKEN_KEY, val);
+  let r;
+  try {
+    r = await readCloud(val);
+  } catch (e) {
+    msg.textContent = '❌ 网络错误：连不上 GitHub，可能需要挂代理';
+    msg.className = 'modal-msg err';
+    initSyncUI();
+    return;
+  }
+  if (r.ok) {
+    msg.textContent = `✅ Token 可用，云端现有 ${r.list.length} 条记录`;
+    msg.className = 'modal-msg ok';
+    initSyncUI();
+    renderProductList();
+    setTimeout(() => { closeTokenModal(); refreshCloudInfo(); }, 900);
+  } else {
+    msg.textContent = explainCloudError(r.code);
+    msg.className = 'modal-msg err';
+    initSyncUI();
+  }
+}
+
+function clearToken() {
+  if (!confirm('确定清除这台设备保存的 Token 吗？\n清除后看不到云端记录，本机记录还在。')) return;
+  localStorage.removeItem(TOKEN_KEY);
+  closeTokenModal();
   initSyncUI();
+  renderProductList();
+  showToast('已清除 Token');
 }
 
 // 读取云端条数 + 显示本机条数，点同步前先心里有数
@@ -1633,7 +1736,7 @@ async function refreshCloudInfo() {
   const ts = document.getElementById('tokenState');
   const has = !!getToken();
   if (ts) {
-    ts.textContent = has ? 'Token：已设置 ✅' : 'Token：未设置 ⚠️ 没有它看不到也存不了云端记录';
+    ts.textContent = has ? 'Token：已设置（' + maskToken(getToken()) + '）' : 'Token：未设置 ⚠️ 没有它看不到也存不了云端记录';
     ts.className = 'token-state ' + (has ? 'ok' : 'warn');
   }
   updateTokenRemind();
@@ -1668,7 +1771,7 @@ function updateTokenRemind() {
 function gotoSyncSetting() {
   switchTab('history');
   document.getElementById('advSection').classList.add('open');
-  setTimeout(() => document.getElementById('githubToken').focus(), 300);
+  setTimeout(openTokenModal, 250);
 }
 
 function toggleAutoSync() {
@@ -1785,15 +1888,11 @@ async function downloadFromGithub() {
 }
 
 function showTokenPrompt() {
-  document.getElementById('tokenRow').style.display = 'block';
-  document.getElementById('githubToken').focus();
+  openTokenModal();
 }
 
 function initSyncUI() {
-  const hasToken = !!getToken();
-  document.getElementById('tokenRow').style.display = hasToken ? 'none' : 'block';
   document.getElementById('autoSyncCheck').checked = isAutoSync();
-  document.getElementById('githubToken').value = '';
   refreshCloudInfo();
 }
 
@@ -1855,6 +1954,25 @@ async function autoPullFromCloud() {
   }
 }
 </script>
+
+<!-- Token 设置弹窗 -->
+<div class="modal-mask" id="tokenModal">
+  <div class="modal-box">
+    <div class="modal-title">🔑 设置 GitHub Token</div>
+    <div class="modal-sub">有了它才能读取和保存你的产品数据（存在你的私有仓库里）。</div>
+    <div class="modal-current" id="modalCurrent"></div>
+    <div class="token-input-wrap">
+      <input id="tokenInput" type="password" placeholder="粘贴 github_pat_ 开头的 Token" autocomplete="off">
+      <button type="button" class="eye" onclick="toggleTokenVisible()" title="显示/隐藏">👁</button>
+    </div>
+    <div class="modal-msg" id="modalMsg"></div>
+    <div class="modal-actions">
+      <button type="button" class="btn-danger2" onclick="clearToken()">清除</button>
+      <button type="button" onclick="closeTokenModal()">取消</button>
+      <button type="button" class="btn-solid" onclick="saveTokenAndTest()">保存并验证</button>
+    </div>
+  </div>
+</div>
 
 </body>
 </html>
