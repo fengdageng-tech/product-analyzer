@@ -288,6 +288,25 @@
   .token-state { font-size: 11px; margin-bottom: 8px; }
   .token-state.ok { color: var(--green); }
   .token-state.warn { color: var(--yellow); }
+
+  .sync-main {
+    width: 100%; padding: 12px; border-radius: 8px; border: none;
+    background: var(--accent); color: #0f172a;
+    font-size: 15px; font-weight: 700; cursor: pointer;
+    font-family: inherit; transition: all 0.15s;
+  }
+  .sync-main:active { transform: scale(0.98); opacity: 0.85; }
+
+  /* 未设置 Token 的低亮度提醒 */
+  .token-remind {
+    font-size: 11px; line-height: 1.6; text-align: center;
+    color: rgba(148,163,184,0.5);
+    margin: -6px 0 14px;
+  }
+  .token-remind span {
+    color: rgba(56,189,248,0.6); cursor: pointer;
+    text-decoration: underline; text-underline-offset: 2px;
+  }
   .auto-sync-row { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 6px; margin-top: 6px; padding-top: 6px; border-top: 1px solid var(--border); }
   .auto-sync-label { display: flex; align-items: center; gap: 8px; font-size: 11px; color: var(--muted); cursor: pointer; user-select: none; white-space: nowrap; }
   /* Custom toggle */
@@ -350,6 +369,10 @@
 <div class="tabs">
   <div class="tab active" onclick="switchTab('analyze')">🔍 分析产品</div>
   <div class="tab" onclick="switchTab('history')">📋 历史记录</div>
+</div>
+
+<div class="token-remind" id="tokenRemind">
+  需要设置 Token 才能保存到云端 · <span onclick="gotoSyncSetting()">去设置</span>
 </div>
 
 <!-- ====== Analyze Panel ====== -->
@@ -519,32 +542,36 @@
   <div id="statsPanel"></div>
   <div class="sync-section">
     <div class="sync-title">☁ 云端同步</div>
-    <div class="sync-sub">下载免登录（读公开文件）· 上传需 Token（<span class="token-link" onclick="showTokenPrompt()">设置</span>）</div>
     <div class="cloud-info" id="cloudInfo">本机 0 条 · 云端读取中…</div>
-    <div class="token-state" id="tokenState"></div>
-    <div class="sync-row">
-      <button class="btn-sync down" id="btnDownload" onclick="downloadFromGithub()">⬇ 下载到本机</button>
-      <button class="btn-sync up" id="btnUpload" onclick="uploadToGithub()">☁ 上传到云端</button>
-    </div>
-    <div id="tokenRow" style="display:none;">
-      <div class="sync-row">
-        <input id="githubToken" type="password" placeholder="粘贴 GitHub Token">
-        <button class="btn-sync" onclick="saveToken()">💾</button>
+    <button class="sync-main" id="btnSync" onclick="syncNow()">☁ 同 步</button>
+    <div class="sync-status" id="syncStatus"></div>
+
+    <div class="collapsible" id="advSection">
+      <div class="collapsible-trigger" onclick="this.parentElement.classList.toggle('open')">
+        <span class="arrow">▶</span> ⚙ 备份与高级 <span style="font-size:11px;color:var(--muted)">(Token / 自动同步 / 导入导出)</span>
+      </div>
+      <div class="collapsible-body">
+        <div class="token-state" id="tokenState"></div>
+        <div id="tokenRow" style="display:none;">
+          <div class="sync-row">
+            <input id="githubToken" type="password" placeholder="粘贴 GitHub Token">
+            <button class="btn-sync" onclick="saveToken()">💾 保存</button>
+          </div>
+        </div>
+        <div class="auto-sync-row">
+          <label class="auto-sync-label">
+            <input type="checkbox" id="autoSyncCheck" onchange="toggleAutoSync()">
+            <span class="toggle-track"></span>
+            分析后自动同步
+          </label>
+        </div>
+        <div style="display: flex; gap: 8px; margin-top: 10px;">
+          <button class="btn btn-outline btn-sm" style="flex:1" onclick="document.getElementById('importFile').click()">📥 导入</button>
+          <button class="btn btn-outline btn-sm" style="flex:1" onclick="exportData()">📤 导出</button>
+          <button class="btn btn-outline btn-sm" style="flex:1; border-color: var(--red); color: var(--red)" onclick="clearAll()">🗑 清空</button>
+        </div>
       </div>
     </div>
-    <div class="auto-sync-row">
-      <label class="auto-sync-label">
-        <input type="checkbox" id="autoSyncCheck" onchange="toggleAutoSync()">
-        <span class="toggle-track"></span>
-        分析后自动上传
-      </label>
-      <div class="sync-status" id="syncStatus"></div>
-    </div>
-  </div>
-  <div style="display: flex; gap: 8px; margin-bottom: 16px;">
-    <button class="btn btn-outline btn-sm" style="flex:1" onclick="document.getElementById('importFile').click()">📥 导入</button>
-    <button class="btn btn-outline btn-sm" style="flex:1" onclick="exportData()">📤 导出</button>
-    <button class="btn btn-outline btn-sm" style="flex:1; border-color: var(--red); color: var(--red)" onclick="clearAll()">🗑 清空</button>
   </div>
   <input type="file" id="importFile" accept=".json" onchange="importData(event)">
   <div id="productList"></div>
@@ -962,7 +989,7 @@ function generateReport() {
 
   // Auto-sync to GitHub if enabled
   if (isAutoSync() && getToken()) {
-    uploadToGithub().catch(() => {});
+    syncNow().catch(() => {});
   }
 }
 
@@ -1579,8 +1606,9 @@ function renderStats() {
 }
 
 // ==================== GITHUB SYNC ====================
-const GITHUB_API = 'https://api.github.com/repos/fengdageng-tech/product-analyzer/contents/data.json';
-const PAGES_DATA_URL = 'https://fengdageng-tech.github.io/product-analyzer/data.json';
+// 数据存在私有仓库里：读和写都必须带 Token，没有 Token 读不到任何云端数据
+const DATA_REPO = 'product-analyzer-data';
+const DATA_API = 'https://api.github.com/repos/fengdageng-tech/' + DATA_REPO + '/contents/data.json';
 const TOKEN_KEY = 'github_sync_token';
 const AUTO_SYNC_KEY = 'github_auto_sync';
 const CLOUD_SEEN_KEY = 'cloud_last_seen';
@@ -1603,24 +1631,44 @@ function saveToken() {
 async function refreshCloudInfo() {
   const el = document.getElementById('cloudInfo');
   const ts = document.getElementById('tokenState');
+  const has = !!getToken();
   if (ts) {
-    const has = !!getToken();
-    ts.textContent = has ? 'Token：已设置 ✅' : 'Token：未设置 ⚠️ 上传需要它，下载不需要';
+    ts.textContent = has ? 'Token：已设置 ✅' : 'Token：未设置 ⚠️ 没有它看不到也存不了云端记录';
     ts.className = 'token-state ' + (has ? 'ok' : 'warn');
   }
+  updateTokenRemind();
   if (!el) return;
   const localN = loadProducts().length;
+  if (!has) {
+    el.innerHTML = `本机 <b>${localN}</b> 条 · 云端 <span style="color:var(--yellow)">需要 Token 才能查看</span>`;
+    return;
+  }
   el.innerHTML = `本机 <b>${localN}</b> 条 · 云端读取中…`;
   try {
-    const res = await fetch(PAGES_DATA_URL + '?_=' + Date.now(), { cache: 'no-cache' });
-    if (!res.ok) throw new Error(String(res.status));
-    const remote = await res.json();
+    const remote = await readCloud(getToken());
+    if (!remote.ok) {
+      el.innerHTML = `本机 <b>${localN}</b> 条 · 云端读取失败（${remote.code === 401 ? 'Token 失效' : remote.code === 404 ? '仓库或文件不存在' : 'HTTP ' + remote.code}）`;
+      return;
+    }
     const last = localStorage.getItem(CLOUD_SEEN_KEY);
-    el.innerHTML = `本机 <b>${localN}</b> 条 · 云端 <b>${Array.isArray(remote) ? remote.length : 0}</b> 条`
+    el.innerHTML = `本机 <b>${localN}</b> 条 · 云端 <b>${remote.list.length}</b> 条`
       + (last ? ` · 上次同步 ${last}` : '');
   } catch (e) {
     el.innerHTML = `本机 <b>${localN}</b> 条 · 云端读取失败（检查网络）`;
   }
+}
+
+// 表单顶部那行不刺眼的提醒
+function updateTokenRemind() {
+  const el = document.getElementById('tokenRemind');
+  if (!el) return;
+  el.style.display = getToken() ? 'none' : 'block';
+}
+
+function gotoSyncSetting() {
+  switchTab('history');
+  document.getElementById('advSection').classList.add('open');
+  setTimeout(() => document.getElementById('githubToken').focus(), 300);
 }
 
 function toggleAutoSync() {
@@ -1643,114 +1691,97 @@ function setSyncStatus(msg, cls) {
   if (el) { el.textContent = msg; el.className = 'sync-status ' + (cls || ''); }
 }
 
-async function uploadToGithub() {
+// 读云端（私有仓库，必须带 Token）
+async function readCloud(token) {
+  const res = await fetch(DATA_API, {
+    headers: { Authorization: 'Bearer ' + token, Accept: 'application/vnd.github+json' },
+    cache: 'no-store'
+  });
+  if (res.status === 404) return { ok: true, list: [], sha: null }; // 文件还没建，当作空的
+  if (res.status === 401) return { ok: false, code: 401 };
+  if (res.status === 403) return { ok: false, code: 403 };
+  if (!res.ok) return { ok: false, code: res.status };
+  const info = await res.json();
+  let list = [];
+  try {
+    const raw = atob((info.content || '').replace(/\s/g, ''));
+    const text = decodeURIComponent(escape(raw));
+    const parsed = JSON.parse(text || '[]');
+    if (Array.isArray(parsed)) list = parsed;
+  } catch (e) {}
+  return { ok: true, list, sha: info.sha };
+}
+
+function explainCloudError(code) {
+  if (code === 401) return '❌ Token 无效或已过期，请重新生成一个再粘进来';
+  if (code === 403) return '❌ Token 权限不足：需要私有仓库 product-analyzer-data 的 Contents 读写权限';
+  if (code === 404) return '❌ 找不到私有仓库 product-analyzer-data，请确认仓库已建好且 Token 有权限';
+  return '❌ 读取失败（HTTP ' + code + '）';
+}
+
+// 一个按钮搞定：读云端 → 合并 → 写回云端
+async function syncNow() {
   const token = getToken();
   if (!token) {
-    setSyncStatus('❌ 还没设置 Token —— 上传必须要有它，这次没有发出去', 'err');
-    showToast('❌ 未设置 Token，上传没发出去');
-    showTokenPrompt();
+    setSyncStatus('❌ 需要先设置 Token 才能同步（在下面「⚙ 备份与高级」里）', 'err');
+    showToast('❌ 未设置 Token，同步没发出去');
+    document.getElementById('advSection').classList.add('open');
     return;
   }
-  setSyncStatus('⏳ 读取云端后合并上传…', '');
+  setSyncStatus('⏳ 同步中…', '');
   try {
-    // 先读云端（公开读，不需要 token），避免覆盖掉别的设备上传的记录
-    let remote = [];
-    try {
-      const r = await fetch(PAGES_DATA_URL + '?_=' + Date.now(), { cache: 'no-cache' });
-      if (r.ok) { const d = await r.json(); if (Array.isArray(d)) remote = d; }
-    } catch (e) {}
+    const remote = await readCloud(token);
+    if (!remote.ok) {
+      setSyncStatus(explainCloudError(remote.code), 'err');
+      showToast('❌ 同步失败');
+      return;
+    }
 
+    // 合并：同名以本机为准，云端独有的保留
     const keyOf = p => p.asin || p.productName || '';
     const map = new Map();
-    remote.forEach(p => map.set(keyOf(p), p));   // 云端原有
-    loadProducts().forEach(p => map.set(keyOf(p), p)); // 本机版本优先覆盖同名
+    remote.list.forEach(p => map.set(keyOf(p), p));
+    loadProducts().forEach(p => map.set(keyOf(p), p));
     const merged = Array.from(map.values());
 
-    const content = btoa(unescape(encodeURIComponent(JSON.stringify(merged, null, 2))));
-    let sha = null;
-    const getRes = await fetch(GITHUB_API, { headers: { Authorization: 'Bearer ' + token } });
+    const body = {
+      message: '☁ 云同步',
+      content: btoa(unescape(encodeURIComponent(JSON.stringify(merged, null, 2))))
+    };
+    if (remote.sha) body.sha = remote.sha;
 
-    if (getRes.status === 401) {
-      setSyncStatus('❌ Token 无效或已过期，请重新生成一个再粘进来', 'err');
-      showToast('❌ Token 失效');
-      showTokenPrompt();
-      return;
-    }
-    if (getRes.status === 403 || getRes.status === 404) {
-      setSyncStatus('❌ Token 权限不足：需要该仓库 Contents 的读+写权限', 'err');
-      showToast('❌ Token 权限不够');
-      return;
-    }
-    if (getRes.ok) { const info = await getRes.json(); sha = info.sha; }
-
-    const body = { message: '☁ 云同步', content };
-    if (sha) body.sha = sha;
-    const res = await fetch(GITHUB_API, {
+    const res = await fetch(DATA_API, {
       method: 'PUT',
-      headers: { Authorization: 'Bearer ' + token, 'Content-Type': 'application/json' },
+      headers: {
+        Authorization: 'Bearer ' + token,
+        Accept: 'application/vnd.github+json',
+        'Content-Type': 'application/json'
+      },
       body: JSON.stringify(body)
     });
 
-    if (res.ok) {
-      saveProducts(merged);
-      localStorage.setItem(CLOUD_SEEN_KEY, new Date().toLocaleString('zh-CN'));
-      setSyncStatus(`✅ 已上传 ${merged.length} 条（云端原有 ${remote.length} 条，已合并）`, 'ok');
-      showToast('☁ 已同步 ' + merged.length + ' 条');
-      refreshCloudInfo();
-      renderProductList();
-      renderStats();
-    } else if (res.status === 401) {
-      setSyncStatus('❌ Token 无效或已过期，请重新生成一个再粘进来', 'err');
-      showToast('❌ Token 失效');
-      showTokenPrompt();
-    } else if (res.status === 403 || res.status === 404) {
-      setSyncStatus('❌ Token 权限不足：需要该仓库 Contents 的读+写权限', 'err');
-      showToast('❌ Token 权限不够');
-    } else {
-      const err = await res.json().catch(() => ({}));
-      setSyncStatus('❌ 上传失败：' + (err.message || ('HTTP ' + res.status)), 'err');
-      showToast('❌ 上传失败 ' + res.status);
+    if (!res.ok) {
+      setSyncStatus(explainCloudError(res.status), 'err');
+      showToast('❌ 同步失败 ' + res.status);
+      return;
     }
+
+    saveProducts(merged);
+    localStorage.setItem(CLOUD_SEEN_KEY, new Date().toLocaleString('zh-CN'));
+    setSyncStatus(`✅ 同步完成：云端共 ${merged.length} 条`, 'ok');
+    showToast('☁ 已同步 ' + merged.length + ' 条');
+    refreshCloudInfo();
+    renderProductList();
+    renderStats();
   } catch (e) {
     setSyncStatus('❌ 网络错误：连不上 GitHub，可能需要挂代理', 'err');
-    showToast('❌ 网络错误，上传失败');
+    showToast('❌ 网络错误，同步失败');
   }
 }
 
 async function downloadFromGithub() {
-  setSyncStatus('⏳ 下载中…', '');
-  try {
-    // 从 GitHub Pages 读公开文件，不需要 token
-    const res = await fetch(PAGES_DATA_URL + '?_=' + Date.now(), { cache: 'no-cache' });
-    if (!res.ok) {
-      setSyncStatus(res.status === 404 ? '❌ 云端暂无数据，请先在电脑上「上传」一次' : '❌ 下载失败 HTTP ' + res.status, 'err');
-      return;
-    }
-    const remote = await res.json();
-    if (!Array.isArray(remote)) throw new Error('格式错误');
-    if (remote.length === 0) {
-      setSyncStatus('⚠️ 云端是空的（0 条）—— 先在那台有数据的设备上点「上传」', 'err');
-      showToast('⚠️ 云端还是空的，没有可下载的记录');
-      return;
-    }
-    // 合并：同名以云端为准，本机独有记录保留
-    const local = loadProducts();
-    const merged = [...remote];
-    const seen = new Set(merged.map(p => p.asin || p.productName || ''));
-    local.forEach(p => {
-      const key = p.asin || p.productName || '';
-      if (!seen.has(key)) { merged.push(p); seen.add(key); }
-    });
-    saveProducts(merged);
-    localStorage.setItem(CLOUD_SEEN_KEY, new Date().toLocaleString('zh-CN'));
-    renderProductList();
-    renderStats();
-    refreshCloudInfo();
-    setSyncStatus(`✅ 已从云端同步 ${remote.length} 条，本机现共 ${merged.length} 条`, 'ok');
-    showToast('⬇ 已同步 ' + remote.length + ' 条');
-  } catch(e) {
-    setSyncStatus('❌ 下载失败：网络错误', 'err');
-  }
+  // 已合并进 syncNow()，保留旧入口避免缓存页报错
+  return syncNow();
 }
 
 function showTokenPrompt() {
@@ -1797,35 +1828,30 @@ function escapeHtml(str) {
 (function init() {
   // 表单不再预填示例数据——示例都在各字段的灰色提示（placeholder）里
   updateLivePrice();
-  // Auto-pull from cloud on page load (free, no token needed)
+  updateTokenRemind();
+  // 已存 Token 时自动从私有仓库拉一次
   autoPullFromCloud();
 })();
 
+// 打开页面时若已存 Token，自动从私有仓库拉一次（没有 Token 就什么都不做）
 async function autoPullFromCloud() {
+  const token = getToken();
+  if (!token) return;
   try {
-    var url = 'https://fengdageng-tech.github.io/product-analyzer/data.json?_=' + Date.now();
-    var res = await fetch(url, { cache: 'no-cache' });
-    if (!res.ok) return;
-    var remote = await res.json();
-    if (!Array.isArray(remote) || !remote.length) return;
-    var local = loadProducts();
-    if (!local.length) {
-      // New device, no local data — just load from cloud
-      saveProducts(remote);
-      return;
-    }
-    // Merge: remote data wins, keep local-only entries
-    var merged = remote.slice();
-    var seen = new Set(merged.map(function(p) { return p.asin || p.productName || ''; }));
-    local.forEach(function(p) {
-      var key = p.asin || p.productName || '';
-      if (!seen.has(key)) { merged.push(p); seen.add(key); }
-    });
-    if (merged.length !== local.length) {
+    const remote = await readCloud(token);
+    if (!remote.ok || !remote.list.length) return;
+    const keyOf = p => p.asin || p.productName || '';
+    const map = new Map();
+    remote.list.forEach(p => map.set(keyOf(p), p));
+    loadProducts().forEach(p => map.set(keyOf(p), p));
+    const merged = Array.from(map.values());
+    if (merged.length !== loadProducts().length) {
       saveProducts(merged);
+      renderProductList();
+      renderStats();
     }
-  } catch(e) {
-    // Silent fail — cloud sync is optional
+  } catch (e) {
+    // 静默失败：同步是可选功能
   }
 }
 </script>
