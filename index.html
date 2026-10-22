@@ -607,6 +607,7 @@
           <button class="btn btn-outline btn-sm" style="flex:1" onclick="exportData()">📤 导出</button>
           <button class="btn btn-outline btn-sm" style="flex:1; border-color: var(--red); color: var(--red)" onclick="clearAll()">🗑 清空</button>
         </div>
+        <button class="btn-sync" style="width:100%; margin-top:8px;" onclick="restoreDeleted()">♻ 恢复已删除的记录</button>
       </div>
     </div>
   </div>
@@ -1380,6 +1381,68 @@ async function deleteFromCloud(key, label) {
     return res.ok ? { ok: true, changed: true } : { ok: false, msg: explainCloudError(res.status) };
   } catch (e) {
     return { ok: false, msg: '网络错误' };
+  }
+}
+
+// 恢复云端带删除标记的记录（误删找回）
+async function restoreDeleted() {
+  const token = getToken();
+  if (!token) {
+    showToast('需要先设置 Token 才能恢复云端记录');
+    openTokenModal();
+    return;
+  }
+  showToast('正在读取云端…');
+  let remote;
+  try {
+    remote = await readCloud(token);
+  } catch (e) {
+    showToast('❌ 网络错误');
+    return;
+  }
+  if (!remote.ok) { showToast(explainCloudError(remote.code)); return; }
+
+  // 只捞有实际内容的（云端合并可能留下只含 key 的空墓碑）
+  const dead = remote.list.filter(p => p._deleted && (p.result || p.price));
+  if (!dead.length) { showToast('云端没有可恢复的记录'); return; }
+
+  const preview = dead.slice(0, 5).map(p => '· ' + String(p.productName || p.asin || '').slice(0, 40)).join('\n');
+  const more = dead.length > 5 ? `\n…共 ${dead.length} 条` : '';
+  if (!confirm(`云端有 ${dead.length} 条已删除的记录，全部恢复吗？\n\n${preview}${more}`)) return;
+
+  const revived = remote.list.map(p => {
+    if (!p._deleted) return p;
+    const copy = Object.assign({}, p);
+    delete copy._deleted;
+    delete copy._deletedAt;
+    return copy;
+  });
+
+  try {
+    const body = {
+      message: '♻ 恢复已删除记录',
+      content: btoa(unescape(encodeURIComponent(JSON.stringify(revived, null, 2))))
+    };
+    if (remote.sha) body.sha = remote.sha;
+    const res = await fetch(DATA_API, {
+      method: 'PUT',
+      headers: {
+        Authorization: 'Bearer ' + token,
+        Accept: 'application/vnd.github+json',
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(body)
+    });
+    if (!res.ok) { showToast('恢复失败：' + explainCloudError(res.status)); return; }
+
+    const { live } = cloudMerge(revived, loadProducts());
+    saveProducts(live);
+    renderProductList();
+    renderStats();
+    refreshCloudInfo();
+    showToast(`✅ 已恢复 ${dead.length} 条`);
+  } catch (e) {
+    showToast('❌ 网络错误');
   }
 }
 
