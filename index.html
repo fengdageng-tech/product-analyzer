@@ -1468,7 +1468,12 @@ function cloudMerge(remoteList, localList) {
     const k = keyOf(p);
     const deadAt = graves.get(k);
     if (deadAt) {
-      const localAt = Date.parse(p.createdAt || '') || 0;
+      // 以「创建时间 / 导入时间 / 更新标记」中最新的那个为准
+      const localAt = Math.max(
+        Date.parse(p.createdAt || '') || 0,
+        p._importedAt || 0,
+        p._updatedAt || 0
+      );
       if (localAt <= deadAt) return; // 云端已删、本机副本更旧 → 丢弃
     }
     map.set(k, p);
@@ -1906,9 +1911,12 @@ function importData(event) {
     try {
       const data = JSON.parse(e.target.result);
       if (!Array.isArray(data)) throw new Error('格式错误');
+      const now = Date.now();
+      // 打上"刚导入"时间：同步时它比云端旧的删除标记更新，不会被当成已删除吃掉
+      const incoming = data.map(p => Object.assign({}, p, { _importedAt: now }));
+
       const existing = loadProducts();
-      const merged = [...data, ...existing];
-      // dedup by asin
+      const merged = [...incoming, ...existing];
       const seen = new Set();
       const deduped = merged.filter(p => {
         const key = p.asin || p.productName || '';
@@ -1918,7 +1926,18 @@ function importData(event) {
       });
       saveProducts(deduped);
       renderProductList();
-      showToast('📥 导入成功 · ' + deduped.length + '条记录');
+      renderStats();
+      refreshCloudInfo();
+      showToast('📥 导入完成 · 共 ' + deduped.length + ' 条');
+
+      // 有 Token 时问一句要不要立刻推到云端
+      if (getToken() && incoming.length && typeof syncNow === 'function') {
+        setTimeout(() => {
+          if (confirm(`已导入 ${incoming.length} 条记录。\n\n要现在同步到云端吗？\n（选「取消」只保存在本机，下次同步也不会丢）`)) {
+            syncNow();
+          }
+        }, 350);
+      }
     } catch(err) {
       showToast('⚠️ 文件格式错误');
     }
