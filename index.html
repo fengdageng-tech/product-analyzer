@@ -418,6 +418,31 @@
   .restore-name { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .restore-time { font-size: 11px; color: var(--muted); flex-shrink: 0; }
   .modal-actions button:disabled { opacity: 0.4; cursor: not-allowed; }
+
+  /* 手机端保存图片预览层 */
+  .img-sheet {
+    position: fixed; inset: 0; z-index: 1200; display: none;
+    background: rgba(0,0,0,0.92); padding: 16px;
+    overflow-y: auto; -webkit-overflow-scrolling: touch;
+  }
+  .img-sheet.show { display: block; }
+  .img-sheet-inner { max-width: 640px; margin: 0 auto; padding-bottom: 20px; }
+  .img-sheet-hint {
+    text-align: center; color: #f2f2f3; font-size: 14px;
+    font-weight: 600; margin: 6px 0 14px;
+  }
+  .img-sheet-hint small { display: block; font-weight: 400; font-size: 12px; color: #a1a1a6; margin-top: 4px; }
+  .img-sheet img {
+    width: 100%; display: block; border-radius: 10px;
+    border: 1px solid #2f3033; -webkit-touch-callout: default;
+  }
+  .img-sheet-actions { display: flex; gap: 8px; margin-top: 14px; }
+  .img-sheet-actions button {
+    flex: 1; padding: 12px; border-radius: 10px; font-size: 13px; font-weight: 600;
+    font-family: inherit; cursor: pointer; border: 1px solid #3f4046;
+    background: transparent; color: #f2f2f3;
+  }
+  .img-sheet-actions .solid { background: #5b8bf7; border-color: #5b8bf7; color: #fff; }
   .auto-sync-row { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 6px; margin-top: 6px; padding-top: 6px; border-top: 1px solid var(--border); }
   .auto-sync-label { display: flex; align-items: center; gap: 8px; font-size: 11px; color: var(--muted); cursor: pointer; user-select: none; white-space: nowrap; }
   /* Custom toggle */
@@ -448,6 +473,11 @@
   .image-preview-wrap img { width: 100%; max-width: 300px; border-radius: 8px; border: 1px solid var(--border); display: block; }
   .image-preview-wrap .clear-img { position: absolute; top: 4px; right: 4px; width: 24px; height: 24px; border-radius: 50%; background: var(--red); color: #fff; border: none; cursor: pointer; font-size: 14px; line-height: 1; }
   .card-img { width: 100%; max-height: 260px; object-fit: contain; border-radius: 8px; margin-bottom: 14px; background: rgba(0,0,0,0.3); }
+  .img-fail {
+    font-size: 12px; color: var(--yellow); margin-bottom: 14px;
+    padding: 10px 12px; border-radius: 8px;
+    background: rgba(217,164,65,0.08); border: 1px solid rgba(217,164,65,0.25);
+  }
 
   /* Export btn */
   .export-row { display: flex; gap: 8px; margin-top: 12px; }
@@ -1265,7 +1295,7 @@ function renderReport(data, r) {
 
       ${linksHtml}
 
-      ${data.imageData ? `<img class="card-img" src="${data.imageData.value.replace(/"/g, '&quot;')}" alt="产品主图" onerror="this.style.display='none'">` : ''}
+      ${data.imageData ? `<img class="card-img" src="${data.imageData.value.replace(/"/g, '&quot;')}" alt="产品主图" referrerpolicy="no-referrer" onerror="this.style.display='none';var n=this.nextElementSibling;if(n)n.style.display='block'"><div class="img-fail" style="display:none">主图加载失败 —— 链接可能失效或不是图片直链，建议用「📁 上传」存本地图片</div>` : ''}
 
       <!-- Metrics -->
       <div class="metric-grid">
@@ -1345,7 +1375,7 @@ function renderProductList() {
     const vLabel = mv === '能做' ? '✅ 能做' : mv === '暂缓' ? (p.autoVerdict ? '⏸ 暂缓(自动)' : '⏸ 暂缓') : mv === '不做' ? '🚫 不做' : '⚪ 未标';
     const date = p.createdAt ? new Date(p.createdAt).toLocaleDateString('zh-CN') : '未知';
     const imgHtml = p.imageData
-      ? `<img class="list-thumb" src="${p.imageData.value.replace(/"/g, '&quot;')}" onerror="this.style.display='none'">`
+      ? `<img class="list-thumb" src="${p.imageData.value.replace(/"/g, '&quot;')}" referrerpolicy="no-referrer" onerror="this.style.display='none'">`
       : '';
     return `
       <div class="product-item" onclick="viewProduct(${i})">
@@ -2135,6 +2165,10 @@ function saveOverrideNote(id, note) {
 }
 
 // Export as image
+function isMobileDevice() {
+  return /Android|iPhone|iPad|iPod|Mobile|HarmonyOS/i.test(navigator.userAgent);
+}
+
 function exportImage() {
   const card = document.getElementById('report-card');
   if (!card) { showToast('⚠️ 先生成报告再导出'); return; }
@@ -2143,18 +2177,57 @@ function exportImage() {
     const script = document.createElement('script');
     script.src = 'https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js';
     script.onload = () => doExport(card);
+    script.onerror = () => showToast('⚠️ 图片组件加载失败，检查网络后重试');
     document.head.appendChild(script);
   } else { doExport(card); }
 }
 
 function doExport(card) {
-  html2canvas(card, { backgroundColor: '#1a1a1c', scale: 2 }).then(canvas => {
-    const link = document.createElement('a');
-    link.download = '产品分析报告_' + new Date().toISOString().slice(0,10) + '.png';
-    link.href = canvas.toDataURL('image/png');
-    link.click();
-    showToast('📸 图片已保存');
-  }).catch(() => showToast('⚠️ 导出失败'));
+  html2canvas(card, {
+    backgroundColor: '#1a1a1c',
+    scale: 2,
+    useCORS: true,
+    allowTaint: false,
+    imageTimeout: 4000
+  }).then(canvas => {
+    let dataUrl;
+    try {
+      dataUrl = canvas.toDataURL('image/png');
+    } catch (e) {
+      showToast('⚠️ 主图跨域无法绘制，请先把主图「上传」成本地图片再导出');
+      return;
+    }
+    if (isMobileDevice()) {
+      openImageSheet(dataUrl);
+    } else {
+      downloadDataUrl(dataUrl);
+      showToast('📸 图片已保存');
+    }
+  }).catch(() => showToast('⚠️ 导出失败，可稍后重试或改用本地上传的主图'));
+}
+
+function downloadDataUrl(dataUrl) {
+  const link = document.createElement('a');
+  link.download = '产品分析报告_' + new Date().toISOString().slice(0, 10) + '.png';
+  link.href = dataUrl;
+  link.click();
+}
+
+// 手机端：弹出预览层，引导长按保存到相册（iOS 不允许网页直接写入相册）
+function openImageSheet(dataUrl) {
+  const mask = document.getElementById('imgSheet');
+  document.getElementById('imgSheetImg').src = dataUrl;
+  const dl = document.getElementById('imgSheetDownload');
+  dl.onclick = () => { downloadDataUrl(dataUrl); showToast('已尝试保存到下载目录'); };
+  mask.classList.add('show');
+  document.body.style.overflow = 'hidden';
+}
+
+function closeImageSheet() {
+  const mask = document.getElementById('imgSheet');
+  mask.classList.remove('show');
+  document.getElementById('imgSheetImg').src = '';
+  document.body.style.overflow = '';
 }
 
 // Statistics panel
@@ -2537,6 +2610,21 @@ function escapeHtml(str) {
 // 云端数据只在用户主动点「☁ 同步」时拉取（不做自动拉取，避免删掉的记录刷新即复活）
 
 </script>
+
+<!-- 手机端保存图片 -->
+<div class="img-sheet" id="imgSheet">
+  <div class="img-sheet-inner">
+    <div class="img-sheet-hint">
+      长按图片 → 存到相册
+      <small id="imgSheetNote">iPhone：长按后选「存储到照片」；安卓：长按后选「保存图片」</small>
+    </div>
+    <img id="imgSheetImg" alt="产品分析报告">
+    <div class="img-sheet-actions">
+      <button type="button" onclick="closeImageSheet()">关闭</button>
+      <button type="button" class="solid" id="imgSheetDownload">尝试直接下载</button>
+    </div>
+  </div>
+</div>
 
 <!-- 恢复记录弹窗 -->
 <div class="modal-mask" id="restoreModal">
