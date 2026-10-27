@@ -668,6 +668,7 @@
   .metric .value, .stat-card .stat-value { font-variant-numeric: tabular-nums; }
   .tab svg, .collapsible-trigger svg { vertical-align: -2px; margin-right: 4px; }
   .only-d { display: none !important; }
+  .d-inline { display: none !important; }
 
   /* 统计卡：标签左上 · 数字左下 · 徽标右下，四卡同一结构 */
   .stats-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 16px;
@@ -750,6 +751,7 @@
     body { max-width: 1200px; padding: 30px 38px 46px; }
     .only-m { display: none !important; }
     .only-d { display: block !important; }
+    .d-inline { display: inline !important; }
     .top-head { display: flex; align-items: flex-end; justify-content: space-between; margin-bottom: 18px; }
     .top-head h1, .top-head .subtitle { text-align: left; }
     .top-head .tabs { width: 300px; margin-bottom: 0; }
@@ -775,6 +777,16 @@
     .hist-tools .hist-chips { margin-bottom: 0; }
     .hist-tools .hist-toolbar { margin-bottom: 0; }
     #reportOutput { max-width: 900px; margin-left: auto; margin-right: auto; }
+    /* 历史行：图1风——容器内每条独立描边框，框间留缝 */
+    .rows { padding: 8px 10px; }
+    .product-item {
+      border: 1px solid #2c2d32;
+      border-radius: 12px;
+      background: rgba(255,255,255,.02);
+      margin: 0 0 10px;
+    }
+    .product-item:last-child { margin-bottom: 0; }
+    .product-item:hover { border-color: #3f4046; }
     .product-item {
       grid-template-columns: 44px minmax(0, 2.3fr) 1.7fr .55fr .8fr .5fr 34px;
       grid-template-areas: none;
@@ -1844,7 +1856,7 @@ function renderProductList() {
       '销量' + (p.monthlySales || '?'),
       (p.myPrice || p.price) ? '售价€' + (p.myPrice || p.price) : '',
       p.cost1688 ? '进货¥' + p.cost1688 : '',
-      p.rating ? p.rating + '星' : '',
+      p.rating ? '<span class="d-inline">评论</span>' + p.rating + '星' : '',
     ].filter(Boolean).join(' · ');
     const onlyM = `<span class="only-m">${hasMl2 ? ' · ' + ml2Txt : ''} · ${vPlainTxt}${pend ? ' · 待验证' + pend + '项' : ''}</span>`;
     const linkFlag = (p.amazonUrl || (p.suppliers || []).length) ? ' · 🔗' : '';
