@@ -422,16 +422,15 @@
   /* 手机端保存图片预览层 */
   .img-sheet {
     position: fixed; inset: 0; z-index: 1200; display: none;
-    background: rgba(0,0,0,0.92); padding: 16px;
+    background: #1a1a1c; padding: 16px;
     overflow-y: auto; -webkit-overflow-scrolling: touch;
   }
   .img-sheet.show { display: block; }
   .img-sheet-inner { max-width: 640px; margin: 0 auto; padding-bottom: 20px; }
   .img-sheet-hint {
-    text-align: center; color: #f2f2f3; font-size: 14px;
+    text-align: center; color: #f2f2f3; font-size: 15px;
     font-weight: 600; margin: 6px 0 14px;
   }
-  .img-sheet-hint small { display: block; font-weight: 400; font-size: 12px; color: #a1a1a6; margin-top: 4px; }
   .img-sheet img {
     width: 100%; display: block; border-radius: 10px;
     border: 1px solid #2f3033; -webkit-touch-callout: default;
@@ -443,6 +442,9 @@
     background: transparent; color: #f2f2f3;
   }
   .img-sheet-actions .solid { background: #5b8bf7; border-color: #5b8bf7; color: #fff; }
+
+  /* 导出图片时隐藏操作按钮，截图里不出现 */
+  #report-card.is-exporting .export-row { display: none !important; }
   .auto-sync-row { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 6px; margin-top: 6px; padding-top: 6px; border-top: 1px solid var(--border); }
   .auto-sync-label { display: flex; align-items: center; gap: 8px; font-size: 11px; color: var(--muted); cursor: pointer; user-select: none; white-space: nowrap; }
   /* Custom toggle */
@@ -2166,7 +2168,12 @@ function saveOverrideNote(id, note) {
 
 // Export as image
 function isMobileDevice() {
-  return /Android|iPhone|iPad|iPod|Mobile|HarmonyOS/i.test(navigator.userAgent);
+  const ua = navigator.userAgent || '';
+  if (/Android|iPhone|iPad|iPod|Mobile|HarmonyOS|okhttp/i.test(ua)) return true;
+  // iPadOS 13+ 会伪装成 Mac；触屏且屏幕不超过平板尺寸，也按手机/平板处理
+  const touch = (navigator.maxTouchPoints || 0) > 0 || 'ontouchstart' in window;
+  const smallScreen = Math.min(window.innerWidth, window.innerHeight) < 1100;
+  return touch && smallScreen;
 }
 
 function exportImage() {
@@ -2183,6 +2190,10 @@ function exportImage() {
 }
 
 function doExport(card) {
+  // 截图时隐藏「保存图片 / 删除」这一行，避免出现在导出的图里
+  card.classList.add('is-exporting');
+  const done = () => card.classList.remove('is-exporting');
+
   html2canvas(card, {
     backgroundColor: '#1a1a1c',
     scale: 2,
@@ -2190,6 +2201,7 @@ function doExport(card) {
     allowTaint: false,
     imageTimeout: 4000
   }).then(canvas => {
+    done();
     let dataUrl;
     try {
       dataUrl = canvas.toDataURL('image/png');
@@ -2203,7 +2215,10 @@ function doExport(card) {
       downloadDataUrl(dataUrl);
       showToast('📸 图片已保存');
     }
-  }).catch(() => showToast('⚠️ 导出失败，可稍后重试或改用本地上传的主图'));
+  }).catch(() => {
+    done();
+    showToast('⚠️ 导出失败，可稍后重试或改用本地上传的主图');
+  });
 }
 
 function downloadDataUrl(dataUrl) {
@@ -2614,10 +2629,7 @@ function escapeHtml(str) {
 <!-- 手机端保存图片 -->
 <div class="img-sheet" id="imgSheet">
   <div class="img-sheet-inner">
-    <div class="img-sheet-hint">
-      长按图片 → 存到相册
-      <small id="imgSheetNote">iPhone：长按后选「存储到照片」；安卓：长按后选「保存图片」</small>
-    </div>
+    <div class="img-sheet-hint">长按保存图片</div>
     <img id="imgSheetImg" alt="产品分析报告">
     <div class="img-sheet-actions">
       <button type="button" onclick="closeImageSheet()">关闭</button>
