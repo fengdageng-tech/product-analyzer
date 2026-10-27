@@ -692,6 +692,18 @@
   .dist-bar i.y { background: var(--yellow); }
   .dist-bar i.r { background: var(--red); }
   .dist-bar i.n { background: #3a3b41; }
+  /* 表单三栏与供应商/竞品：与历史卡片同质感 */
+  .fcol, .frow2 .collapsible, .sync-entry {
+    background: linear-gradient(180deg, #232428, #1e1f23);
+    border: 1px solid #2c2d32; border-radius: 16px; padding: 15px 16px;
+    box-shadow: inset 0 1px 0 rgba(255,255,255,.045), 0 10px 26px rgba(0,0,0,.28);
+  }
+  .fcol { margin-bottom: 14px; }
+  .fcol .group-title { margin: 0 0 12px; }
+  .fcol .form-group:last-child { margin-bottom: 0; }
+  .frow2 .collapsible { margin-bottom: 14px; }
+  .image-preview-wrap img { max-width: 120px; }
+  .p-meta2 { margin-top: 3px; }
 
   /* 历史行：手机/桌面共用一套 DOM，两种排布 */
   .product-item {
@@ -725,7 +737,9 @@
     .top-head h1, .top-head .subtitle { text-align: left; }
     .top-head .tabs { width: 300px; margin-bottom: 0; }
     .token-remind { text-align: left; }
-    .fcols { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 14px; align-items: start; }
+    .fcols { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 14px; align-items: stretch; }
+    .fcol { margin-bottom: 0; }
+    .frow2 .collapsible { margin-bottom: 0; }
     .fcol .group-title { margin-top: 0; }
     .frow2 { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
     #col-cost .collapsible-body { display: block !important; }
@@ -1788,17 +1802,19 @@ function renderProductList() {
     const pend = mv === '暂缓' ? pendingVerifyCount(p) : 0;
     const hasMl2 = p.result && p.result.profit;
     const ml2Pct = hasMl2 ? p.result.profit.ml2 + '%' : '—';
+    const ml2Txt = hasMl2 ? 'ML2 ' + p.result.profit.ml2 + '%' : '';
     const vLabelShort = mv === '能做' ? '✅ 能做' : mv === '暂缓' ? (p.autoVerdict ? '⏸ 暂缓(自动)' : '⏸ 暂缓') : mv === '不做' ? '🚫 不做' : '⚪ 未标';
     const vChipCls = mv === '能做' ? 'v-go' : mv === '暂缓' ? 'v-wait' : mv === '不做' ? 'v-skip' : 'v-none';
-    let metaHtml = [
-      p.asin ? 'ASIN: ' + escapeHtml(p.asin) : '',
+    const line1 = p.asin ? 'ASIN: ' + escapeHtml(p.asin) : '<span style="opacity:.6;">未填 ASIN</span>';
+    const line2 = [
       '销量' + (p.monthlySales || '?'),
-      '评论' + (p.reviewCount || '?'),
-      '⭐' + (p.rating || '?'),
-      (p.myPrice || p.price) ? '€' + (p.myPrice || p.price) : '',
+      (p.myPrice || p.price) ? '售价€' + (p.myPrice || p.price) : '',
+      p.cost1688 ? '进货¥' + p.cost1688 : '',
+      p.rating ? p.rating + '星' : '',
     ].filter(Boolean).join(' · ');
-    metaHtml += `<span class="only-m">${hasMl2 ? ' · ML2 ' + p.result.profit.ml2 + '%' : ''} · ${vLabelShort}${pend ? ' · 待验证' + pend + '项' : ''}</span>`;
-    metaHtml += (p.amazonUrl || (p.suppliers || []).length) ? ' · 🔗' : '';
+    const onlyM = `<span class="only-m">${hasMl2 ? ' · ' + ml2Txt : ''} · ${vLabelShort}${pend ? ' · 待验证' + pend + '项' : ''}</span>`;
+    const linkFlag = (p.amazonUrl || (p.suppliers || []).length) ? ' · 🔗' : '';
+    const metaHtml = `${line1}<div class="p-meta2">${line2}${onlyM}${linkFlag}</div>`;
     return `
       <div class="product-item" onclick="viewProduct(${i})">
         ${imgHtml}
