@@ -669,16 +669,19 @@
   .tab svg, .collapsible-trigger svg { vertical-align: -2px; margin-right: 4px; }
   .only-d { display: none !important; }
 
-  /* 统计卡：参考图2结构——标签在上，大数字+状态徽标在下（同一行，不换行） */
-  .stat-card { text-align: left; padding: 13px 16px; display: flex; flex-direction: column; justify-content: center; gap: 8px; }
+  /* 统计卡：标签左上 · 数字左下 · 徽标右下，四卡同一结构 */
+  .stats-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 16px;
+    grid-template-areas: "hero hero" "total recent" "dist dist"; }
+  .stat-card { min-width: 0; text-align: left; padding: 14px 16px; display: flex; flex-direction: column; justify-content: space-between; gap: 10px; }
+  .stat-card.st-total { grid-area: total; }
+  .stat-card.st-hero { grid-area: hero; }
+  .stat-card.st-dist { grid-area: dist; }
+  .stat-card.st-recent { grid-area: recent; }
   .stat-label { font-size: 11px; color: var(--muted); }
-  .stat-main { display: flex; align-items: center; gap: 10px; flex-wrap: nowrap; }
-  .stat-card .stat-value { font-size: 22px; font-weight: 800; font-variant-numeric: tabular-nums; letter-spacing: -.3px; }
-  .stat-badge { margin-left: auto; font-size: 10.5px; font-weight: 700; padding: 3px 9px; border-radius: 999px; white-space: nowrap; flex: none; }
-  .b-blue { background: rgba(91,139,247,.14); color: #a8c2ff; }
-  .b-green { background: rgba(76,175,125,.14); color: #6cc79a; }
-  .b-yellow { background: rgba(217,164,65,.14); color: #d9b96a; }
-  .b-red { background: rgba(217,107,107,.14); color: #e08a8a; }
+  .stat-main { display: flex; align-items: flex-end; justify-content: space-between; gap: 8px; min-width: 0; }
+  .stat-card .stat-value { font-size: 20px; font-weight: 800; font-variant-numeric: tabular-nums; letter-spacing: -.3px; line-height: 1.1; }
+  .stat-value.stat-date { font-size: 13px; letter-spacing: 0; }
+  .stat-badge { font-size: 10.5px; font-weight: 700; padding: 3px 9px; border-radius: 999px; white-space: nowrap; flex: none; }
   .stat-card.hero {
     background: linear-gradient(150deg, #3f6ce0, #5b8bf7 55%, #6f9bff);
     border: none; box-shadow: 0 12px 28px rgba(63,108,224,.35);
@@ -686,7 +689,9 @@
   .stat-card.hero .stat-value { color: #fff; }
   .stat-card.hero .stat-label { color: rgba(255,255,255,.85); }
   .b-white { background: rgba(255,255,255,.2); color: #fff; }
-  .dist-bar { display: flex; height: 6px; border-radius: 3px; overflow: hidden; background: rgba(255,255,255,.06); margin-top: 3px; }
+  .b-blue { background: rgba(91,139,247,.14); color: #a8c2ff; }
+  .b-green { background: rgba(76,175,125,.14); color: #6cc79a; }
+  .dist-bar { display: flex; height: 6px; border-radius: 3px; overflow: hidden; background: rgba(255,255,255,.06); }
   .dist-bar i { height: 100%; }
   .dist-bar i.g { background: var(--green); }
   .dist-bar i.y { background: var(--yellow); }
@@ -761,8 +766,10 @@
     #col-cost .collapsible-body { display: block !important; }
     #col-cost .collapsible-trigger { display: none; }
     .generate-sticky { position: static; background: transparent; padding: 18px 0 0; }
-    .stats-grid { grid-template-columns: 1fr 1.25fr 1.25fr 1fr; gap: 16px; margin-bottom: 18px; }
+    .stats-grid { grid-template-columns: 1fr 1.25fr 1.25fr 1fr; gap: 16px; margin-bottom: 18px;
+      grid-template-areas: "total hero dist recent"; }
     .stat-card { padding: 15px 18px; }
+    .stat-value.stat-date { font-size: 15px; }
     .hist-tools { display: flex !important; flex-wrap: wrap; gap: 12px; align-items: center; margin-bottom: 18px; }
     .hist-tools .hist-search { flex: 1; min-width: 210px; margin-bottom: 0; }
     .hist-tools .hist-chips { margin-bottom: 0; }
@@ -3190,24 +3197,24 @@ function renderStats() {
 
   panel.innerHTML = `
     <div class="stats-grid">
-      <div class="stat-card">
-        <div class="stat-label">总分析数</div>
-        <div class="stat-main"><span class="stat-value">${total}</span>${monthNew > 0 ? `<span class="stat-badge b-blue">本月 +${monthNew}</span>` : ''}</div>
-      </div>
-      <div class="stat-card hero">
+      <div class="stat-card st-hero">
         <div class="stat-label">平均 ML2 · 目标 30%</div>
         <div class="stat-main"><span class="stat-value">${avgMargin}%</span>${ml2Badge}</div>
       </div>
-      <div class="stat-card">
+      <div class="stat-card st-total">
+        <div class="stat-label">总分析数</div>
+        <div class="stat-main"><span class="stat-value">${total}</span>${monthNew > 0 ? `<span class="stat-badge b-blue">本月 +${monthNew}</span>` : ''}</div>
+      </div>
+      <div class="stat-card st-dist">
         <div class="stat-label">我的判断分布</div>
-        <div class="stat-main">${distCounts}</div>
+        <div class="stat-main"><span class="dist-counts">${distCounts}</span></div>
         <div class="dist-bar">
           <i class="g" style="width:${goPct}%"></i><i class="y" style="width:${waitPct}%"></i><i class="r" style="width:${skipPct}%"></i><i class="n" style="width:${nonePct}%"></i>
         </div>
       </div>
-      <div class="stat-card">
+      <div class="stat-card st-recent">
         <div class="stat-label">最近分析</div>
-        <div class="stat-main"><span class="stat-value" style="font-size:16px;">${latest}</span>${agoBadge}</div>
+        <div class="stat-main"><span class="stat-value stat-date">${latest}</span>${agoBadge}</div>
       </div>
     </div>
   `;
