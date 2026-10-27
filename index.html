@@ -692,6 +692,12 @@
   .dist-bar i.y { background: var(--yellow); }
   .dist-bar i.r { background: var(--red); }
   .dist-bar i.n { background: #3a3b41; }
+  .dist-counts { display: inline-flex; align-items: center; gap: 9px; font-size: 13px; font-weight: 800; white-space: nowrap; font-variant-numeric: tabular-nums; }
+  .dist-counts .dc-item { display: inline-flex; align-items: center; gap: 3px; }
+  .dist-counts .dc-item svg { flex: none; }
+  .fc svg { vertical-align: -2px; margin-right: 4px; }
+  .btn-o svg { vertical-align: -2px; margin-right: 4px; }
+  .verdict svg { vertical-align: -2px; }
   /* 表单三栏与供应商/竞品：与历史卡片同质感 */
   .fcol, .frow2 .collapsible, .sync-entry {
     background: linear-gradient(180deg, #232428, #1e1f23);
@@ -721,7 +727,8 @@
   .product-item .p-date { grid-area: date; font-size: 12px; color: var(--muted); }
   .product-item .p-meta { grid-area: meta; font-size: 12px; color: var(--muted); margin-top: 2px; }
   .product-item .item-del { grid-area: del; align-self: center; }
-  .tag-v { display: inline-block; font-size: 10.5px; font-weight: 600; border-radius: 6px; padding: 2px 8px; white-space: nowrap; }
+  .tag-v { display: inline-flex; align-items: center; gap: 4px; font-size: 10.5px; font-weight: 600; border-radius: 6px; padding: 2px 8px; white-space: nowrap; }
+  .tag-v svg { flex: none; }
   .tag-v.v-go { color: var(--green); background: rgba(76,175,125,.12); border: 1px solid rgba(76,175,125,.4); }
   .tag-v.v-wait { color: var(--yellow); background: rgba(217,164,65,.12); border: 1px solid rgba(217,164,65,.4); }
   .tag-v.v-skip { color: var(--red); background: rgba(217,107,107,.12); border: 1px solid rgba(217,107,107,.4); }
@@ -750,7 +757,7 @@
     .fcol .group-title { margin: 0 0 14px; }
     .frow2 .collapsible { margin-bottom: 0; padding: 8px 20px; }
     .frow2 .collapsible .collapsible-trigger { padding: 12px 0; }
-    .frow2 { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; }
+    .frow2 { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; align-items: start; }
     #col-cost .collapsible-body { display: block !important; }
     #col-cost .collapsible-trigger { display: none; }
     .generate-sticky { position: static; background: transparent; padding: 18px 0 0; }
@@ -1516,9 +1523,9 @@ function renderReport(data, r, opts) {
   // 我的判断（只认标记，系统不下结论）
   const mv = data.manualVerdict;
   const vClass = mv === '能做' ? 'go' : mv === '不做' ? 'skip' : mv === '暂缓' ? 'wait' : 'none';
-  const vText = mv === '能做' ? '✅ 能做'
-    : mv === '暂缓' ? (data.autoVerdict ? '⏸ 暂缓 · 自动' : '⏸ 暂缓')
-    : mv === '不做' ? '🚫 不做'
+  const vText = mv === '能做' ? `${VICON.go} 能做`
+    : mv === '暂缓' ? (data.autoVerdict ? `${VICON.wait} 暂缓 · 自动` : `${VICON.wait} 暂缓`)
+    : mv === '不做' ? `${VICON.skip} 不做`
     : '未判断';
 
   // Metric tiles
@@ -1685,18 +1692,18 @@ function renderReport(data, r, opts) {
       <div class="section-title"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-1.5px;margin-right:5px;"><path d="M12 20h8"/><path d="M16.5 3.5a2.1 2.1 0 013 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>我的判断</div>
       ${demo ? `
       <div class="override-bar">
-        <button type="button" class="btn-o ${mv==='能做'?'go-active':''}" disabled>✅ 能做</button>
-        <button type="button" class="btn-o ${mv==='暂缓'?'wait-active':''}" disabled>⏸ 暂缓</button>
-        <button type="button" class="btn-o ${mv==='不做'?'skip-active':''}" disabled>🚫 不做</button>
+        <button type="button" class="btn-o ${mv==='能做'?'go-active':''}" disabled>${VICON.go} 能做</button>
+        <button type="button" class="btn-o ${mv==='暂缓'?'wait-active':''}" disabled>${VICON.wait} 暂缓</button>
+        <button type="button" class="btn-o ${mv==='不做'?'skip-active':''}" disabled>${VICON.skip} 不做</button>
       </div>
       ${data.manualNote ? `<div class="override-note"><input value="${escapeHtml(data.manualNote)}" disabled></div>` : ''}
       <div class="verify-box">${renderVerifyStatic(data)}</div>
       <div style="font-size:11px;color:var(--muted);text-align:center;margin-top:8px;">演示模式：只能看，不能改 · 退出后不留任何痕迹</div>
       ` : `
       <div class="override-bar">
-        <button class="btn-o ${mv==='能做'?'go-active':''}" onclick="overrideVerdict('${data.asin||data.productName}','能做')">✅ 能做</button>
-        <button class="btn-o ${mv==='暂缓'?'wait-active':''}" onclick="overrideVerdict('${data.asin||data.productName}','暂缓')">⏸ 暂缓</button>
-        <button class="btn-o ${mv==='不做'?'skip-active':''}" onclick="overrideVerdict('${data.asin||data.productName}','不做')">🚫 不做</button>
+        <button class="btn-o ${mv==='能做'?'go-active':''}" onclick="overrideVerdict('${data.asin||data.productName}','能做')">${VICON.go} 能做</button>
+        <button class="btn-o ${mv==='暂缓'?'wait-active':''}" onclick="overrideVerdict('${data.asin||data.productName}','暂缓')">${VICON.wait} 暂缓</button>
+        <button class="btn-o ${mv==='不做'?'skip-active':''}" onclick="overrideVerdict('${data.asin||data.productName}','不做')">${VICON.skip} 不做</button>
       </div>
       <div class="override-note">
         <input autocomplete="off" placeholder="备注原因（选填）" value="${escapeHtml(data.manualNote||'')}" onchange="saveOverrideNote('${data.asin||data.productName}',this.value)">
@@ -1719,6 +1726,15 @@ function renderReport(data, r, opts) {
 }
 
 // ==================== HISTORY PANEL ====================
+// 判断状态的单色图标（继承所在文字颜色，不用彩色 emoji）
+const VICON = {
+  go: '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M8.5 12.5l2.5 2.5 4.5-5.5"/></svg>',
+  wait: '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M10 9v6M14 9v6"/></svg>',
+  skip: '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M5.8 5.8l12.4 12.4"/></svg>',
+  none: '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/></svg>',
+};
+function vIcon(mv) { return mv === '能做' ? VICON.go : mv === '暂缓' ? VICON.wait : mv === '不做' ? VICON.skip : VICON.none; }
+
 let histFilter = 'all';
 const PAGE_SIZE = 5;   // 每页 5 条记录
 let histPage = 1;
@@ -1732,7 +1748,7 @@ function setHistFilter(f) {
 function renderHistChips() {
   const box = document.getElementById('histChips');
   if (!box) return;
-  const defs = [['all', '全部'], ['能做', '✅ 能做'], ['暂缓', '⏸ 暂缓'], ['不做', '🚫 不做'], ['未标', '未标']];
+  const defs = [['all', '全部'], ['能做', VICON.go + '能做'], ['暂缓', VICON.wait + '暂缓'], ['不做', VICON.skip + '不做'], ['未标', '未标']];
   box.innerHTML = defs.map(([val, label]) =>
     `<button type="button" class="hist-chip${histFilter === val ? ' on' : ''}" onclick="setHistFilter('${val}')">${label}</button>`
   ).join('');
@@ -1814,7 +1830,7 @@ function renderProductList() {
     const hasMl2 = p.result && p.result.profit;
     const ml2Pct = hasMl2 ? p.result.profit.ml2 + '%' : '—';
     const ml2Txt = hasMl2 ? 'ML2 ' + p.result.profit.ml2 + '%' : '';
-    const vLabelShort = mv === '能做' ? '✅ 能做' : mv === '暂缓' ? (p.autoVerdict ? '⏸ 暂缓(自动)' : '⏸ 暂缓') : mv === '不做' ? '🚫 不做' : '⚪ 未标';
+    const vPlainTxt = mv || '未标';
     const vChipCls = mv === '能做' ? 'v-go' : mv === '暂缓' ? 'v-wait' : mv === '不做' ? 'v-skip' : 'v-none';
     const line1 = p.asin ? 'ASIN: ' + escapeHtml(p.asin) : '<span style="opacity:.6;">未填 ASIN</span>';
     const line2 = [
@@ -1823,7 +1839,7 @@ function renderProductList() {
       p.cost1688 ? '进货¥' + p.cost1688 : '',
       p.rating ? p.rating + '星' : '',
     ].filter(Boolean).join(' · ');
-    const onlyM = `<span class="only-m">${hasMl2 ? ' · ' + ml2Txt : ''} · ${vLabelShort}${pend ? ' · 待验证' + pend + '项' : ''}</span>`;
+    const onlyM = `<span class="only-m">${hasMl2 ? ' · ' + ml2Txt : ''} · ${vPlainTxt}${pend ? ' · 待验证' + pend + '项' : ''}</span>`;
     const linkFlag = (p.amazonUrl || (p.suppliers || []).length) ? ' · 🔗' : '';
     const metaHtml = `${line1}<div class="p-meta2">${line2}${onlyM}${linkFlag}</div>`;
     return `
@@ -1834,7 +1850,7 @@ function renderProductList() {
         </div>
         <div class="p-meta">${metaHtml}</div>
         <div class="p-ml2 only-d">${ml2Pct}</div>
-        <div class="p-verdict only-d"><span class="tag-v ${vChipCls}">${vLabelShort}</span>${pend ? '<span class="pend">待验证' + pend + '项</span>' : ''}</div>
+        <div class="p-verdict only-d"><span class="tag-v ${vChipCls}">${vIcon(mv)}${vPlainTxt}</span>${pend ? '<span class="pend">待验证' + pend + '项</span>' : ''}</div>
         <div class="p-date">${date}</div>
         <button class="item-del" onclick="event.stopPropagation();deleteSingle(${i})" title="删除">🗑</button>
       </div>
@@ -3170,7 +3186,7 @@ function renderStats() {
     const days = Math.floor((Date.now() - new Date(dates[dates.length - 1]).getTime()) / 86400000);
     agoBadge = `<span class="stat-badge ${days <= 1 ? 'b-green' : 'b-blue'}">${days <= 0 ? '今天' : days === 1 ? '昨天' : days + '天前'}</span>`;
   }
-  const distCounts = `<span style="font-size:14px;font-weight:800;"><span style="color:var(--green);">✅${goCount}</span> <span style="color:var(--yellow);">⏸${waitCount}</span> <span style="color:var(--red);">🚫${skipCount}</span> <span style="color:var(--muted);">⚪${noneCount}</span></span>`;
+  const distCounts = `<span class="dist-counts"><span class="dc-item" style="color:var(--green);">${VICON.go}${goCount}</span><span class="dc-item" style="color:var(--yellow);">${VICON.wait}${waitCount}</span><span class="dc-item" style="color:var(--red);">${VICON.skip}${skipCount}</span><span class="dc-item" style="color:var(--muted);">${VICON.none}${noneCount}</span></span>`;
 
   panel.innerHTML = `
     <div class="stats-grid">
