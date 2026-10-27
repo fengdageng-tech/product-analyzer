@@ -561,6 +561,29 @@
   .sync-entry .chev { color: var(--muted); font-size: 14px; }
   /* 利润表符号列：对齐各行文字起点 */
   .td-sym { display: inline-block; width: 1.35em; }
+  /* 利润表：符号/文字/数值三列，跨设备对齐（➖→普通减号，避开手机 emoji 字体字宽） */
+  .pt-table { width: 100%; border-collapse: collapse; color: var(--text); }
+  .pt-table td { padding: 3px 0; vertical-align: top; }
+  .pt-sym { width: 1.6em; color: var(--muted); white-space: nowrap; }
+  .pt-label { color: var(--muted); }
+  .pt-val { text-align: right; white-space: nowrap; font-variant-numeric: tabular-nums; }
+  /* 参考广告试算 */
+  .ad-sim {
+    display: flex; flex-wrap: wrap; align-items: center; gap: 6px 12px;
+    background: rgba(91,139,247,.06); border: 1px solid rgba(91,139,247,.2);
+    border-radius: 10px; padding: 9px 12px; margin-top: 10px; font-size: 12.5px;
+  }
+  .ad-sim-title { color: var(--muted); font-weight: 600; }
+  .ad-sim-input { display: inline-flex; align-items: center; gap: 4px; color: var(--text); white-space: nowrap; }
+  .ad-sim-input input { width: 78px; padding: 5px 8px; font-size: 13px; text-align: right; }
+  .ad-sim-res { font-weight: 700; }
+  /* 主图上传按钮：淡蓝次级样式，替代系统白底 */
+  .image-upload-row .btn-sm {
+    background: rgba(91,139,247,0.12);
+    border: 1px solid rgba(91,139,247,0.35);
+    color: var(--accent);
+    font-weight: 600;
+  }
   /* 未同步红点 */
   .unsync-badge { font-size: 11px; color: var(--red); font-weight: 600; white-space: nowrap; }
   .unsync-badge i { display: inline-block; width: 7px; height: 7px; border-radius: 50%; background: var(--red); margin-right: 5px; vertical-align: 1px; }
@@ -1253,6 +1276,7 @@ function updateLivePrice() {
 
 function generateReport() {
   if (demoActive) { demoActive = false; updateDemoBanner(); } // 从演示模式点生成 → 正常出自己的报告
+  trial = null; adSimVal = null; // 新报告从原值开始，不带上一条的错误试算
   const data = readFormValues();
 
   if (!data.productName) { showToast('⚠️ 请至少填写产品名称'); return; }
@@ -1362,7 +1386,7 @@ function renderReport(data, r, opts) {
   let profitTile;
   if (p) {
     const mColor = parseFloat(p.ml2) >= 15 ? 'green' : parseFloat(p.ml2) >= 10 ? 'yellow' : 'red';
-    profitTile = `<div class="metric"><div class="value ${mColor}">${p.ml2}%</div><div class="label">利润率 · 利润€${p.ml}</div></div>`;
+    profitTile = `<div class="metric"><div class="value ${mColor}">${p.ml2}%</div><div class="label">利润率</div></div>`;
   } else if (r.costCeiling) {
     profitTile = r.costCeiling.ok
       ? `<div class="metric"><div class="value yellow">¥${r.costCeiling.value}</div><div class="label">打样成本上限</div></div>`
@@ -1390,31 +1414,13 @@ function renderReport(data, r, opts) {
         </div>
         <div class="collapsible-body">
         <div style="font-size:13px;line-height:2.2;padding:8px 0;">
-          <table style="width:100%;border-collapse:collapse;color:var(--text);">
-            <tr>
-              <td style="padding:3px 0;color:var(--muted);"><span class="td-sym"></span>售价（我的定价）</td>
-              <td style="text-align:right;font-weight:700;">${ed('price', '€' + Number(dispPrice).toFixed(2))}</td>
-            </tr>
-            <tr>
-              <td style="padding:3px 0;color:var(--muted);"><span class="td-sym">➖</span>佣金（15.4%）</td>
-              <td style="text-align:right;color:var(--red);">−€${p.referralFee}</td>
-            </tr>
-            <tr>
-              <td style="padding:3px 0;color:var(--muted);"><span class="td-sym">➖</span>采购+头程（¥${p.tu} ÷ ${r.hl}）</td>
-              <td style="text-align:right;color:var(--red);">${ed('cost', '−€' + p.cb)}</td>
-            </tr>
-            <tr>
-              <td style="padding:3px 0;color:var(--muted);"><span class="td-sym">➖</span>FBA配送费${r.sizeTier ? '（' + (COUNTRY_NAMES[data.vatCountry] || '德国') + '·' + r.sizeTier + (r.fbaBracket ? '·≤' + r.fbaBracket : '') + '）' : ''}</td>
-              <td style="text-align:right;color:var(--red);">${ed('fba', '−€' + Number(dispFba).toFixed(2))}</td>
-            </tr>
-            <tr style="border-bottom:1px dashed var(--border);">
-              <td style="padding:3px 0;color:var(--muted);"><span class="td-sym">➖</span>增值税（${p.vatPct}%）</td>
-              <td style="text-align:right;color:var(--red);">−€${p.vatAmount}</td>
-            </tr>
-            <tr>
-              <td style="padding:6px 0;font-weight:800;font-size:15px;"><span class="td-sym">💰</span>利润 / 单</td>
-              <td style="text-align:right;font-weight:800;font-size:15px;color:var(--green);">€${p.ml}</td>
-            </tr>
+          <table class="pt-table">
+            <tr><td class="pt-sym"></td><td class="pt-label">售价（我的定价）</td><td class="pt-val" style="font-weight:700;">${ed('price', '€' + Number(dispPrice).toFixed(2))}</td></tr>
+            <tr><td class="pt-sym">−</td><td class="pt-label">佣金（15.4%）</td><td class="pt-val" style="color:var(--red);">−€${p.referralFee}</td></tr>
+            <tr><td class="pt-sym">−</td><td class="pt-label">采购+头程（¥${p.tu} ÷ ${r.hl}）</td><td class="pt-val" style="color:var(--red);">${ed('cost', '−€' + p.cb)}</td></tr>
+            <tr><td class="pt-sym">−</td><td class="pt-label">FBA配送费${r.sizeTier ? '（' + (COUNTRY_NAMES[data.vatCountry] || '德国') + '·' + r.sizeTier + (r.fbaBracket ? '·≤' + r.fbaBracket : '') + '）' : ''}</td><td class="pt-val" style="color:var(--red);">${ed('fba', '−€' + Number(dispFba).toFixed(2))}</td></tr>
+            <tr><td class="pt-sym">−</td><td class="pt-label">增值税（${p.vatPct}%）</td><td class="pt-val" style="color:var(--red);">−€${p.vatAmount}</td></tr>
+            <tr style="border-top:1px dashed var(--border);"><td class="pt-sym">💰</td><td class="pt-label" style="font-weight:800;font-size:15px;color:var(--text);">利润 / 单</td><td class="pt-val" style="font-weight:800;font-size:15px;color:var(--green);">€${p.ml}</td></tr>
           </table>
         </div>
         <div class="ml2-grid">
@@ -1426,6 +1432,12 @@ function renderReport(data, r, opts) {
           <div class="ml2-item"><span class="k">参考广告出价</span><span class="v">€${p.refBid}</span></div>
           <div class="ml2-item"><span class="k">达标售价(${p.targetPct}%)</span><span class="v" style="color:${p.reached ? 'var(--green)' : 'var(--yellow)'};">${p.targetPrice ? '€' + p.targetPrice : '—'}</span></div>
         </div>
+        ${!demo ? `
+        <div class="ad-sim">
+          <span class="ad-sim-title">📢 参考广告试算</span>
+          <label class="ad-sim-input">广告 €<input id="adSimInput" type="number" step="0.01" min="0" value="${adSimVal != null ? adSimVal : (p.refBid || 0)}" oninput="adSimVal=this.value;updateAdSim()"> /单</label>
+          <span class="ad-sim-res" id="adSimResult"></span>
+        </div>` : ''}
         ${trialOn ? `<span class="delta-chip">ML2 ${p.ml2}%（原 ${r.profit.ml2}% · ${deltaPct >= 0 ? '+' : ''}${deltaPct.toFixed(1)}）</span>` : ''}
         </div>
       </div>
@@ -1497,7 +1509,7 @@ function renderReport(data, r, opts) {
       <div class="metric-grid">
         <div class="metric">
           <div class="value ${colorMap[r.reviewLevel]}">${r.reviews}</div>
-          <div class="label">评论数 · ${r.reviewLabel}</div>
+          <div class="label">评论数</div>
         </div>
         <div class="metric">
           <div class="value ${colorMap[r.ratingLevel]}">⭐${r.rating.toFixed(1)}</div>
@@ -1564,6 +1576,7 @@ function renderReport(data, r, opts) {
   `;
 
   document.getElementById('reportOutput').innerHTML = html;
+  if (!demo && r.profit) updateAdSim();
 }
 
 // ==================== HISTORY PANEL ====================
@@ -1686,7 +1699,7 @@ function renderProductList() {
 
 // 清空表单，开一条全新的产品（不会删除任何已保存的记录）
 function newProduct() {
-  trial = null;
+  trial = null; adSimVal = null;
   ['productName', 'shortName', 'asin', 'price', 'myPrice', 'monthlySales', 'reviewCount',
    'rating', 'rank', 'cost1688', 'negativeReviews', 'amazonUrl', 'weightG', 'fbaFee']
     .forEach(id => {
@@ -1727,7 +1740,7 @@ function viewProduct(index) {
   const products = loadProducts();
   const p = products[index];
   if (!p) return;
-  trial = null;
+  trial = null; adSimVal = null;
 
   // Fill form
   document.getElementById('productName').value = p.productName || '';
@@ -2607,7 +2620,10 @@ function startTrialEdit(field, el) {
   el.replaceWith(input);
   input.focus();
   input.select();
+  let done = false;
   const commit = () => {
+    if (done) return; // blur 和 change 可能连着触发，只提交一次
+    done = true;
     const v = parseFloat(input.value);
     if (!isNaN(v) && v >= 0) {
       trial = trial || {};
@@ -2615,13 +2631,38 @@ function startTrialEdit(field, el) {
     }
     if (lastReport) renderReport(lastReport.data, lastReport.r);
   };
-  input.addEventListener('keydown', e => { if (e.key === 'Enter') input.blur(); });
+  input.addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); commit(); } });
   input.addEventListener('blur', commit);
+  input.addEventListener('change', commit);
 }
 
 function clearTrial() {
   trial = null;
   if (lastReport) renderReport(lastReport.data, lastReport.r);
+}
+
+// ==================== 参考广告试算（纯查看，不保存） ====================
+let adSimVal = null; // 广告费（€/单）
+
+function currentBaseProfit() {
+  if (!lastReport || !lastReport.r || !lastReport.r.profit) return null;
+  if (trial && (trial.price != null || trial.cost != null || trial.fba != null)) return trialProfitDisplay();
+  return lastReport.r.profit;
+}
+
+function updateAdSim() {
+  const box = document.getElementById('adSimResult');
+  const input = document.getElementById('adSimInput');
+  if (!box || !input) return;
+  const p = currentBaseProfit();
+  if (!p) { box.textContent = ''; return; }
+  const ad = Math.max(0, parseFloat(input.value) || 0);
+  const price = p.price != null ? p.price : lastReport.r.price;
+  const mlAfter = parseFloat(p.ml) - ad;
+  const ml2After = price > 0 ? mlAfter / price * 100 : 0;
+  const target = p.targetPct || 30;
+  const color = ml2After >= target ? 'var(--green)' : ml2After >= target * 0.66 ? 'var(--yellow)' : 'var(--red)';
+  box.innerHTML = `→ 利润 €${mlAfter.toFixed(2)} · ML2 <span style="color:${color};">${ml2After.toFixed(1)}%</span>`;
 }
 
 // ==================== 游客演示模式 ====================
@@ -2669,7 +2710,7 @@ function updateDemoBanner() {
 
 function enterDemoMode() {
   demoActive = true;
-  trial = null;
+  trial = null; adSimVal = null;
   updateDemoBanner();
   switchTab('analyze');
   renderReport(DEMO_RECORD, DEMO_RECORD.result, { demo: true });
@@ -2678,7 +2719,7 @@ function enterDemoMode() {
 
 function exitDemoMode() {
   demoActive = false;
-  trial = null;
+  trial = null; adSimVal = null;
   document.getElementById('reportOutput').innerHTML = '';
   updateDemoBanner();
   window.scrollTo({ top: 0, behavior: 'smooth' });
