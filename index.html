@@ -277,7 +277,7 @@
   .comparison-table .warn { color: var(--yellow); }
 
   /* Stats */
-  .stats-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 16px; }
+  .stats-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 16px; }
   .stat-card { background: var(--card); border: 1px solid var(--border); border-radius: 10px; padding: 14px; text-align: center; }
   .stat-card .stat-value { font-size: 22px; font-weight: 800; }
   .stat-card .stat-label { font-size: 11px; color: var(--muted); margin-top: 2px; }
@@ -669,12 +669,12 @@
   .tab svg, .collapsible-trigger svg { vertical-align: -2px; margin-right: 4px; }
   .only-d { display: none !important; }
 
-  /* 统计卡：参考图2结构——标签在上，大数字+状态徽标在下 */
-  .stat-card { text-align: left; padding: 13px 16px; display: flex; flex-direction: column; justify-content: center; gap: 6px; }
+  /* 统计卡：参考图2结构——标签在上，大数字+状态徽标在下（同一行，不换行） */
+  .stat-card { text-align: left; padding: 13px 16px; display: flex; flex-direction: column; justify-content: center; gap: 8px; }
   .stat-label { font-size: 11px; color: var(--muted); }
-  .stat-main { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+  .stat-main { display: flex; align-items: center; gap: 10px; flex-wrap: nowrap; }
   .stat-card .stat-value { font-size: 22px; font-weight: 800; font-variant-numeric: tabular-nums; letter-spacing: -.3px; }
-  .stat-badge { margin-left: auto; font-size: 10.5px; font-weight: 700; padding: 3px 9px; border-radius: 999px; white-space: nowrap; }
+  .stat-badge { margin-left: auto; font-size: 10.5px; font-weight: 700; padding: 3px 9px; border-radius: 999px; white-space: nowrap; flex: none; }
   .b-blue { background: rgba(91,139,247,.14); color: #a8c2ff; }
   .b-green { background: rgba(76,175,125,.14); color: #6cc79a; }
   .b-yellow { background: rgba(217,164,65,.14); color: #d9b96a; }
