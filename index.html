@@ -544,6 +544,23 @@
     font-size: 12.5px; font-weight: 600; cursor: pointer; white-space: nowrap; font-family: inherit;
   }
   .btn-export-csv:active { opacity: .7; }
+  /* 翻页 */
+  .pager { display: flex; align-items: center; justify-content: center; gap: 8px; margin: 16px 0 4px; }
+  .pager button { background: var(--card); border: 1px solid var(--border); color: var(--text); border-radius: 8px; padding: 8px 14px; font-size: 12.5px; cursor: pointer; font-family: inherit; }
+  .pager button:active { opacity: .7; }
+  .pager button:disabled { opacity: .4; cursor: default; }
+  .pager .pg-info { font-size: 12px; color: var(--muted); min-width: 74px; text-align: center; }
+  /* 云端同步入口行 */
+  .sync-entry {
+    display: flex; align-items: center; gap: 8px;
+    background: var(--card); border: 1px solid var(--border); border-radius: 14px;
+    padding: 14px 15px; margin-top: 16px; cursor: pointer;
+  }
+  .sync-entry:active { border-color: var(--accent); }
+  .sync-entry .t { font-size: 14px; font-weight: 600; color: var(--text); flex: 1; }
+  .sync-entry .chev { color: var(--muted); font-size: 14px; }
+  /* 利润表符号列：对齐各行文字起点 */
+  .td-sym { display: inline-block; width: 1.35em; }
   /* 未同步红点 */
   .unsync-badge { font-size: 11px; color: var(--red); font-weight: 600; white-space: nowrap; }
   .unsync-badge i { display: inline-block; width: 7px; height: 7px; border-radius: 50%; background: var(--red); margin-right: 5px; vertical-align: 1px; }
@@ -811,10 +828,10 @@
   <button class="new-product-btn" onclick="newProduct()"><b>＋</b> 新建产品</button>
   <div id="statsPanel"></div>
   <div class="hist-tools" id="histTools" style="display:none;">
-    <div class="hist-search">🔍<input autocomplete="off" id="histSearch" placeholder="搜索品名 / 简称 / ASIN" oninput="renderProductList()"></div>
+    <div class="hist-search">🔍<input autocomplete="off" id="histSearch" placeholder="搜索品名 / 简称 / ASIN" oninput="histPage=1;renderProductList()"></div>
     <div class="hist-chips" id="histChips"></div>
     <div class="hist-toolbar">
-      <select id="histSort" onchange="renderProductList()">
+      <select id="histSort" onchange="histPage=1;renderProductList()">
         <option value="new">时间 · 新→旧</option>
         <option value="ml2desc">ML2 · 高→低</option>
         <option value="ml2asc">ML2 · 低→高</option>
@@ -822,6 +839,20 @@
       <button type="button" class="btn-export-csv" onclick="exportCsv()">⬇ 导出Excel</button>
     </div>
   </div>
+  <input autocomplete="off" type="file" id="importFile" accept=".json" onchange="importData(event)">
+  <div id="productList"></div>
+  <div class="pager" id="histPager" style="display:none;"></div>
+  <div class="sync-entry" onclick="switchTab('sync')">
+    <span class="t">☁ 云端同步</span>
+    <span class="unsync-badge" id="entryUnsync" style="display:none;"><i></i>0 条未同步</span>
+    <span class="chev">›</span>
+  </div>
+</div>
+
+<!-- ====== 云端同步独立页 ====== -->
+<div class="panel" id="panel-sync">
+  <button class="new-product-btn" onclick="switchTab('history')">← 返回历史记录</button>
+
   <div class="sync-section">
     <div class="sync-head" onclick="toggleSyncPanel()">
       <span class="sync-title">☁ 云端同步</span>
@@ -879,8 +910,6 @@
       </div>
     </div>
   </div>
-  <input autocomplete="off" type="file" id="importFile" accept=".json" onchange="importData(event)">
-  <div id="productList"></div>
 </div>
 
 <script>
@@ -1363,27 +1392,27 @@ function renderReport(data, r, opts) {
         <div style="font-size:13px;line-height:2.2;padding:8px 0;">
           <table style="width:100%;border-collapse:collapse;color:var(--text);">
             <tr>
-              <td style="padding:3px 0;color:var(--muted);">售价（我的定价）</td>
+              <td style="padding:3px 0;color:var(--muted);"><span class="td-sym"></span>售价（我的定价）</td>
               <td style="text-align:right;font-weight:700;">${ed('price', '€' + Number(dispPrice).toFixed(2))}</td>
             </tr>
             <tr>
-              <td style="padding:3px 0;color:var(--muted);">➖ 佣金（15.4%）</td>
+              <td style="padding:3px 0;color:var(--muted);"><span class="td-sym">➖</span>佣金（15.4%）</td>
               <td style="text-align:right;color:var(--red);">−€${p.referralFee}</td>
             </tr>
             <tr>
-              <td style="padding:3px 0;color:var(--muted);">➖ 采购+头程（¥${p.tu} ÷ ${r.hl}）</td>
+              <td style="padding:3px 0;color:var(--muted);"><span class="td-sym">➖</span>采购+头程（¥${p.tu} ÷ ${r.hl}）</td>
               <td style="text-align:right;color:var(--red);">${ed('cost', '−€' + p.cb)}</td>
             </tr>
             <tr>
-              <td style="padding:3px 0;color:var(--muted);">➖ FBA配送费${r.sizeTier ? '（' + (COUNTRY_NAMES[data.vatCountry] || '德国') + '·' + r.sizeTier + (r.fbaBracket ? '·≤' + r.fbaBracket : '') + '）' : ''}</td>
+              <td style="padding:3px 0;color:var(--muted);"><span class="td-sym">➖</span>FBA配送费${r.sizeTier ? '（' + (COUNTRY_NAMES[data.vatCountry] || '德国') + '·' + r.sizeTier + (r.fbaBracket ? '·≤' + r.fbaBracket : '') + '）' : ''}</td>
               <td style="text-align:right;color:var(--red);">${ed('fba', '−€' + Number(dispFba).toFixed(2))}</td>
             </tr>
             <tr style="border-bottom:1px dashed var(--border);">
-              <td style="padding:3px 0;color:var(--muted);">➖ 增值税（${p.vatPct}%）</td>
+              <td style="padding:3px 0;color:var(--muted);"><span class="td-sym">➖</span>增值税（${p.vatPct}%）</td>
               <td style="text-align:right;color:var(--red);">−€${p.vatAmount}</td>
             </tr>
             <tr>
-              <td style="padding:6px 0;font-weight:800;font-size:15px;">💰 利润 / 单</td>
+              <td style="padding:6px 0;font-weight:800;font-size:15px;"><span class="td-sym">💰</span>利润 / 单</td>
               <td style="text-align:right;font-weight:800;font-size:15px;color:var(--green);">€${p.ml}</td>
             </tr>
           </table>
@@ -1457,7 +1486,7 @@ function renderReport(data, r, opts) {
         <span class="verdict ${vClass}">${vText}</span>
       </div>
       <div style="font-size:12px;color:var(--muted);margin-bottom:12px;">
-        ${data.asin ? 'ASIN: ' + escapeHtml(data.asin) + ' · ' : ''}${data.prodType === 'dingzhi' ? '定制 · ' : '公模 · '}${data.vatCountry || 'DE'} · 分析于 ${new Date(data.createdAt).toLocaleString('zh-CN')}
+        ${data.asin ? 'ASIN: ' + escapeHtml(data.asin) + ' · ' : ''}${data.prodType === 'dingzhi' ? '定制 · ' : '公模 · '}${data.vatCountry || 'DE'} · 分析于 ${new Date(data.createdAt).toLocaleDateString('zh-CN')}
       </div>
 
       ${linksHtml}
@@ -1539,9 +1568,12 @@ function renderReport(data, r, opts) {
 
 // ==================== HISTORY PANEL ====================
 let histFilter = 'all';
+const PAGE_SIZE = 5;   // 每页 5 条记录
+let histPage = 1;
 
 function setHistFilter(f) {
   histFilter = f;
+  histPage = 1;
   renderProductList();
 }
 
@@ -1592,12 +1624,32 @@ function renderProductList() {
   }
 
   const visible = getHistVisible(products);
+
+  // 分页：筛完/排完再切页，翻页控件超过 5 条才出现
+  const totalPages = Math.max(1, Math.ceil(visible.length / PAGE_SIZE));
+  if (histPage > totalPages) histPage = totalPages;
+  if (histPage < 1) histPage = 1;
+  const pageItems = visible.slice((histPage - 1) * PAGE_SIZE, histPage * PAGE_SIZE);
+  const pager = document.getElementById('histPager');
+  if (pager) {
+    if (totalPages > 1) {
+      pager.style.display = 'flex';
+      pager.innerHTML =
+        `<button type="button" ${histPage <= 1 ? 'disabled' : ''} onclick="histPage--;renderProductList()">‹ 上一页</button>` +
+        `<span class="pg-info">第 ${histPage} / ${totalPages} 页</span>` +
+        `<button type="button" ${histPage >= totalPages ? 'disabled' : ''} onclick="histPage++;renderProductList()">下一页 ›</button>`;
+    } else {
+      pager.style.display = 'none';
+      pager.innerHTML = '';
+    }
+  }
+
   if (!visible.length) {
     container.innerHTML = '<div class="empty-state">🔍 没有符合条件的记录<br><span style="font-size:12px;">换个关键词或筛选条件试试</span></div>';
     return;
   }
 
-  container.innerHTML = visible.map(({ p, i }) => {
+  container.innerHTML = pageItems.map(({ p, i }) => {
     const mv = p.manualVerdict;
     const vLabel = mv === '能做' ? '✅ 能做' : mv === '暂缓' ? (p.autoVerdict ? '⏸ 暂缓(自动)' : '⏸ 暂缓') : mv === '不做' ? '🚫 不做' : '⚪ 未标';
     const date = p.createdAt ? new Date(p.createdAt).toLocaleDateString('zh-CN') : '未知';
@@ -2670,8 +2722,6 @@ function exportCsv() {
 const SYNC_AT_KEY = 'product_analyzer_sync_at';
 
 function updateUnsyncBadge() {
-  const el = document.getElementById('unsyncBadge');
-  if (!el) return;
   const at = parseInt(localStorage.getItem(SYNC_AT_KEY)) || 0;
   let n = 0;
   if (at > 0) {
@@ -2679,8 +2729,11 @@ function updateUnsyncBadge() {
       Math.max(Date.parse(p.createdAt) || 0, p._updatedAt || 0, p._importedAt || 0) > at
     ).length;
   }
-  el.style.display = n > 0 ? '' : 'none';
-  if (n > 0) el.innerHTML = '<i></i>' + n + ' 条未同步';
+  [document.getElementById('unsyncBadge'), document.getElementById('entryUnsync')].forEach(el => {
+    if (!el) return;
+    el.style.display = n > 0 ? '' : 'none';
+    if (n > 0) el.innerHTML = '<i></i>' + n + ' 条未同步';
+  });
 }
 
 // ==================== 汇率自动（手动填写优先） ====================
@@ -3061,12 +3114,7 @@ function updateSyncUI() {
   guide.style.display = has ? 'none' : 'block';
   ready.style.display = has ? 'block' : 'none';
 
-  if (has) {
-    openSyncPanel();
-  } else if (!syncUserToggled) {
-    body.classList.remove('open');
-    document.getElementById('syncChev').textContent = '›';
-  }
+  openSyncPanel(); // 独立同步页：内容常开，不再折叠收起
 }
 
 async function refreshCloudInfo() {
@@ -3111,7 +3159,7 @@ function updateTokenRemind() {
 }
 
 function gotoSyncSetting() {
-  switchTab('history');
+  switchTab('sync');
   document.getElementById('advSection').classList.add('open');
   setTimeout(openTokenModal, 250);
 }
@@ -3244,7 +3292,10 @@ function switchTab(name) {
   });
   document.getElementById('panel-analyze').classList.toggle('active', name === 'analyze');
   document.getElementById('panel-history').classList.toggle('active', name === 'history');
-  if (name === 'history') { renderStats(); renderProductList(); initSyncUI(); }
+  const syncPanel = document.getElementById('panel-sync');
+  if (syncPanel) syncPanel.classList.toggle('active', name === 'sync');
+  if (name === 'history') { renderStats(); renderProductList(); }
+  if (name === 'sync') { initSyncUI(); }
 }
 
 function showToast(msg) {
