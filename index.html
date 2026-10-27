@@ -648,10 +648,108 @@
   .rate-edit-row input { width: 92px; padding: 5px 8px; font-size: 12.5px; text-align: right; }
   .btn-o:disabled { opacity: .55; cursor: default; }
 
+  /* ===== 质感升级（A款：配色不动，加层次）===== */
+  .card, .stat-card, .sync-section, .modal-box {
+    background: linear-gradient(180deg, #232428, #1e1f23);
+    box-shadow: inset 0 1px 0 rgba(255,255,255,.045), 0 10px 26px rgba(0,0,0,.28);
+  }
+  .gt-chip {
+    width: 26px; height: 26px; border-radius: 9px; flex: none;
+    display: inline-flex; align-items: center; justify-content: center;
+    background: rgba(91,139,247,.13); color: #7ea4f8;
+  }
+  .gt-chip.g { background: rgba(76,175,125,.12); color: #6cc79a; }
+  .gt-chip.y { background: rgba(217,164,65,.12); color: #d9b96a; }
+  .group-title { align-items: center; }
+  .group-title .gt-chip + span { flex: 1; }
+  .group-title.with-action .gt-chip + span { flex: initial; }
+  .group-title.with-action { gap: 9px; }
+  .group-title.with-action .gt-link { margin-left: auto; }
+  .metric .value, .stat-card .stat-value { font-variant-numeric: tabular-nums; }
+  .tab svg, .collapsible-trigger svg { vertical-align: -2px; margin-right: 4px; }
+  .only-d { display: none !important; }
+
+  /* 统计卡升级：图标chip + 达标进度条 + 判断分布条 */
+  .stat-card { text-align: left; padding: 13px 14px; }
+  .sc-head { display: flex; align-items: center; gap: 9px; }
+  .sc-chip {
+    width: 27px; height: 27px; border-radius: 9px; flex: none;
+    display: inline-flex; align-items: center; justify-content: center;
+    background: rgba(91,139,247,.13); color: #7ea4f8;
+  }
+  .sc-chip.y { background: rgba(217,164,65,.12); color: #d9b96a; }
+  .stat-card.hero {
+    background: linear-gradient(150deg, #3f6ce0, #5b8bf7 55%, #6f9bff);
+    border: none; box-shadow: 0 12px 28px rgba(63,108,224,.35);
+  }
+  .stat-card.hero .stat-value { color: #fff; }
+  .stat-card.hero .stat-label { color: rgba(255,255,255,.85); }
+  .sc-bar { height: 5px; border-radius: 3px; background: rgba(255,255,255,.25); margin-top: 9px; overflow: hidden; }
+  .sc-bar i { display: block; height: 100%; background: #fff; border-radius: 3px; }
+  .sc-bars { margin-top: 9px; display: flex; flex-direction: column; gap: 3px; }
+  .sc-bars .b { height: 4px; border-radius: 2px; background: rgba(255,255,255,.08); overflow: hidden; }
+  .sc-bars .b i { display: block; height: 100%; border-radius: 2px; }
+
+  /* 历史行：手机/桌面共用一套 DOM，两种排布 */
+  .product-item {
+    display: grid; grid-template-columns: auto 1fr auto auto;
+    grid-template-areas: "thumb main date del" "thumb meta meta del";
+    gap: 2px 12px; align-items: center;
+  }
+  .product-item .list-thumb { grid-area: thumb; }
+  .product-item .p-main { grid-area: main; min-width: 0; }
+  .product-item .p-date { grid-area: date; font-size: 12px; color: var(--muted); }
+  .product-item .p-meta { grid-area: meta; font-size: 12px; color: var(--muted); margin-top: 2px; }
+  .product-item .item-del { grid-area: del; align-self: center; }
+  .tag-v { display: inline-block; font-size: 10.5px; font-weight: 600; border-radius: 6px; padding: 2px 8px; white-space: nowrap; }
+  .tag-v.v-go { color: var(--green); background: rgba(76,175,125,.12); border: 1px solid rgba(76,175,125,.4); }
+  .tag-v.v-wait { color: var(--yellow); background: rgba(217,164,65,.12); border: 1px solid rgba(217,164,65,.4); }
+  .tag-v.v-skip { color: var(--red); background: rgba(217,107,107,.12); border: 1px solid rgba(217,107,107,.4); }
+  .tag-v.v-none { color: var(--muted); background: rgba(148,163,184,.1); border: 1px solid rgba(148,163,184,.3); }
+  .pend { font-size: 10.5px; color: var(--yellow); margin-left: 8px; }
+  .product-item .c-ml2 { color: #a8c2ff; font-weight: 700; font-variant-numeric: tabular-nums; }
+  .thumb-empty {
+    display: flex; align-items: center; justify-content: center;
+    background: #1e1f23; border: 1px dashed #2c2d32; color: #55565c;
+  }
+
+  /* ===== 桌面端宽版（≥900px）：三栏表单 + 表格化历史 ===== */
+  @media (min-width: 900px) {
+    body { max-width: 1140px; }
+    .only-m { display: none !important; }
+    .only-d { display: block !important; }
+    .top-head { display: flex; align-items: flex-end; justify-content: space-between; }
+    .top-head h1, .top-head .subtitle { text-align: left; }
+    .top-head .tabs { width: 300px; margin-bottom: 0; }
+    .token-remind { text-align: left; }
+    .fcols { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 14px; align-items: start; }
+    .fcol .group-title { margin-top: 0; }
+    .frow2 { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+    #col-cost .collapsible-body { display: block !important; }
+    #col-cost .collapsible-trigger { display: none; }
+    .generate-sticky { position: static; background: transparent; padding: 8px 0 0; }
+    .stats-grid { grid-template-columns: 1fr 1.25fr 1.25fr 1fr; }
+    .hist-tools { display: flex !important; flex-wrap: wrap; gap: 10px; align-items: center; }
+    .hist-tools .hist-search { flex: 1; min-width: 210px; margin-bottom: 0; }
+    .hist-tools .hist-chips { margin-bottom: 0; }
+    .hist-tools .hist-toolbar { margin-bottom: 0; }
+    #reportOutput { max-width: 880px; margin-left: auto; margin-right: auto; }
+    .product-item {
+      grid-template-columns: 44px minmax(0, 2.3fr) 1.7fr .55fr .8fr .5fr 34px;
+      grid-template-areas: none;
+      grid-template-rows: none;
+      gap: 12px;
+      padding: 11px 16px;
+    }
+    .product-item .list-thumb, .product-item .p-main, .product-item .p-meta,
+    .product-item .p-ml2, .product-item .p-verdict, .product-item .p-date,
+    .product-item .item-del { grid-area: auto; }
+    .p-verdict { white-space: nowrap; }
+  }
+
   /* Responsive */
   @media (max-width: 400px) {
     .metric-grid { grid-template-columns: 1fr 1fr; }
-    .row, .row-3 { grid-template-columns: 1fr; }
     .card-header { flex-direction: column; }
     .verdict { margin-left: 0; margin-top: 8px; align-self: flex-start; }
     .stats-grid { grid-template-columns: 1fr 1fr; }
@@ -660,12 +758,15 @@
 </head>
 <body>
 
-<h1>产品分析报告</h1>
-<div class="subtitle">跨境产品开发 · 判断工具（欧洲站）</div>
-
-<div class="tabs">
-  <div class="tab active" onclick="switchTab('analyze')">🔍 分析产品</div>
-  <div class="tab" onclick="switchTab('history')">📋 历史记录</div>
+<div class="top-head">
+  <div class="head-l">
+    <h1>产品分析报告</h1>
+    <div class="subtitle">跨境产品开发 · 判断工具（欧洲站）</div>
+  </div>
+  <div class="tabs">
+    <div class="tab active" onclick="switchTab('analyze')"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>分析产品</div>
+    <div class="tab" onclick="switchTab('history')"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 6h13M8 12h13M8 18h13M4 6h.01M4 12h.01M4 18h.01"/></svg>历史记录</div>
+  </div>
 </div>
 
 <div class="token-remind" id="tokenRemind">
@@ -682,7 +783,9 @@
     <button type="button" class="demo-cta" onclick="enterDemoMode()">👀 看示例报告</button>
   </div>
 
-  <div class="group-title with-action"><span>🛒 产品信息</span><span class="gt-link" onclick="newProduct()">＋ 新建</span></div>
+<div class="fcols">
+<div class="fcol" id="col-product">
+  <div class="group-title with-action"><span class="gt-chip"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 8l-9-5-9 5v8l9 5 9-5V8z"/><path d="M3 8l9 5 9-5"/><path d="M12 13v8"/></svg></span><span>产品信息</span><span class="gt-link" onclick="newProduct()">＋ 新建</span></div>
   <div class="form-group">
     <label>产品名称 <span class="req">*</span></label>
     <input autocomplete="off" id="productName" placeholder="">
@@ -714,7 +817,7 @@
     <div class="ad-hint" id="tierHint" style="font-size:11px;color:var(--accent);margin-top:4px;"></div>
   </div>
   <div class="form-group">
-    <label>🔗 亚马逊链接 <span class="unit">(选填 · 存着方便回看)</span></label>
+    <label>亚马逊链接 <span class="unit">(选填 · 存着方便回看)</span></label>
     <input autocomplete="off" id="amazonUrl" placeholder="https://www.amazon.de/dp/…">
   </div>
 
@@ -730,9 +833,11 @@
       <button class="clear-img" onclick="clearImage()" type="button">✕</button>
     </div>
   </div>
+</div>
 
-  <div class="group-title">📊 市场数据</div>
-  <div class="row-3">
+<div class="fcol" id="col-market">
+  <div class="group-title"><span class="gt-chip g"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M5 20v-8M12 20V5M19 20v-5"/><path d="M3 20h18"/></svg></span><span>市场数据</span></div>
+  <div class="row">
     <div class="form-group">
       <label>竞品价 <span class="unit">(€)</span></label>
       <input autocomplete="off" id="price" type="number" step="0.01" placeholder="10.99" oninput="updateLivePrice()">
@@ -741,36 +846,31 @@
       <label>月销量</label>
       <input autocomplete="off" id="monthlySales" type="number" placeholder="850">
     </div>
+  </div>
+  <div class="row">
     <div class="form-group">
       <label>评论数</label>
       <input autocomplete="off" id="reviewCount" type="number" placeholder="38">
     </div>
-  </div>
-  <div class="row">
     <div class="form-group">
       <label>评分</label>
       <input autocomplete="off" id="rating" type="number" step="0.1" min="1" max="5" placeholder="3.9">
     </div>
-    <div class="form-group">
-      <label>小类排名</label>
-      <input autocomplete="off" id="rank" type="number" placeholder="12">
-    </div>
+  </div>
+  <div class="form-group">
+    <label>小类排名</label>
+    <input autocomplete="off" id="rank" type="number" placeholder="12">
   </div>
   <div class="form-group">
     <label>差评内容 <span class="unit">(每条一行，粘贴关键词或原文)</span></label>
     <textarea autocomplete="off" id="negativeReviews" placeholder="例：卡片太薄，容易弯折&#10;颜色跟图片不一样，实物偏暗&#10;包装太差，到货压坏了&#10;尺寸比想象的小"></textarea>
   </div>
+</div>
 
-  <div class="collapsible" id="supplierSection">
-    <div class="collapsible-trigger" onclick="toggleSupplier()">
-      <span class="arrow">▶</span> 🏭 供应商链接 <span style="font-size:11px;color:var(--muted)">(可加多家)</span>
-    </div>
-    <div class="collapsible-body" id="supplierBody"></div>
-  </div>
-
+<div class="fcol" id="col-cost">
   <div class="collapsible" id="costParamSection">
     <div class="collapsible-trigger" onclick="toggleCostParams()">
-      <span class="arrow">▶</span> 💰 成本与参数 <span style="font-size:11px;color:var(--muted)">(定制/成本/税点/汇率)</span>
+      <span class="arrow">▶</span> <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8"/><path d="M12 8v8M9.5 10.5h5M9.5 13.5h5"/></svg> 成本与参数 <span style="font-size:11px;color:var(--muted)">(定制/成本/税点/汇率)</span>
     </div>
     <div class="collapsible-body" id="costParamBody">
       <div class="form-group">
@@ -806,7 +906,7 @@
       </div>
       <div class="collapsible" id="rateTableSection">
         <div class="collapsible-trigger" onclick="toggleRateTable()">
-          <span class="arrow">▶</span> 📋 查看配送费率表 <span style="font-size:11px;color:var(--muted)">(对照原表)</span>
+          <span class="arrow">▶</span> <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 10h18M9 10v10"/></svg> 查看配送费率表 <span style="font-size:11px;color:var(--muted)">(对照原表)</span>
         </div>
         <div class="collapsible-body" id="rateTableBody"></div>
       </div>
@@ -828,6 +928,16 @@
       </div>
     </div>
   </div>
+</div>
+</div>
+
+<div class="frow2">
+  <div class="collapsible" id="supplierSection">
+    <div class="collapsible-trigger" onclick="toggleSupplier()">
+      <span class="arrow">▶</span> <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="7" width="18" height="13" rx="2"/><path d="M8 7V5a2 2 0 012-2h4a2 2 0 012 2v2"/></svg> 供应商链接 <span style="font-size:11px;color:var(--muted)">(可加多家)</span>
+    </div>
+    <div class="collapsible-body" id="supplierBody"></div>
+  </div>
 
   <!-- Competitor comparison -->
   <div class="collapsible" id="competitorSection">
@@ -836,6 +946,7 @@
     </div>
     <div class="collapsible-body" id="competitorBody"></div>
   </div>
+</div>
 
   <div class="generate-sticky">
     <div class="sticky-ml2" id="stickyMl2"></div>
@@ -912,7 +1023,7 @@
 
       <div class="collapsible" id="advSection">
         <div class="collapsible-trigger" onclick="this.parentElement.classList.toggle('open')">
-          <span class="arrow">▶</span> ⚙ 备份与高级
+          <span class="arrow">▶</span> <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M4.9 4.9l2.2 2.2M16.9 16.9l2.2 2.2M19.1 4.9L16.9 7.1M7.1 16.9l-2.2 2.2"/></svg> 备份与高级
         </div>
         <div class="collapsible-body">
           <div class="token-state" id="tokenState"></div>
@@ -1410,7 +1521,7 @@ function renderReport(data, r, opts) {
       ${trialOn ? `<div class="trial-bar"><span>🧪 试算中 · ${trialDesc()}</span><button type="button" onclick="clearTrial()">恢复原值</button></div>` : ''}
       <div class="collapsible open">
         <div class="collapsible-trigger" onclick="this.parentElement.classList.toggle('open')">
-          <span class="arrow">▶</span> 💰 利润拆解（€）· 利润率 ${p.ml2}%${trialOn ? ' · 试算' : ''}
+          <span class="arrow">▶</span> <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8"/><path d="M12 8v8M9.5 10.5h5M9.5 13.5h5"/></svg> 利润拆解（€）· 利润率 ${p.ml2}%${trialOn ? ' · 试算' : ''}
         </div>
         <div class="collapsible-body">
         <div style="font-size:13px;line-height:2.2;padding:8px 0;">
@@ -1543,7 +1654,7 @@ function renderReport(data, r, opts) {
       ` : ''}
 
       <!-- Manual verdict -->
-      <div class="section-title">📝 我的判断</div>
+      <div class="section-title"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-1.5px;margin-right:5px;"><path d="M12 20h8"/><path d="M16.5 3.5a2.1 2.1 0 013 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>我的判断</div>
       ${demo ? `
       <div class="override-bar">
         <button type="button" class="btn-o ${mv==='能做'?'go-active':''}" disabled>✅ 能做</button>
@@ -1664,33 +1775,37 @@ function renderProductList() {
 
   container.innerHTML = pageItems.map(({ p, i }) => {
     const mv = p.manualVerdict;
-    const vLabel = mv === '能做' ? '✅ 能做' : mv === '暂缓' ? (p.autoVerdict ? '⏸ 暂缓(自动)' : '⏸ 暂缓') : mv === '不做' ? '🚫 不做' : '⚪ 未标';
     const date = p.createdAt ? new Date(p.createdAt).toLocaleDateString('zh-CN') : '未知';
     const imgHtml = p.imageData
       ? `<img class="list-thumb" src="${p.imageData.value.replace(/"/g, '&quot;')}" referrerpolicy="no-referrer" onerror="this.style.display='none'">`
-      : '';
+      : '<span class="list-thumb thumb-empty"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="2"/><circle cx="9" cy="10" r="1.6"/><path d="M21 16l-5-5-9 9"/></svg></span>';
     const mainName = p.shortName
       ? `${escapeHtml(p.shortName)}<div class="name-en">${escapeHtml(p.productName || '')}</div>`
       : `<span class="clamp2">${escapeHtml(p.productName || '未命名')}</span>`;
     const pend = mv === '暂缓' ? pendingVerifyCount(p) : 0;
-    const ml2Txt = (p.result && p.result.profit) ? ' · ML2 ' + p.result.profit.ml2 + '%' : '';
+    const hasMl2 = p.result && p.result.profit;
+    const ml2Pct = hasMl2 ? p.result.profit.ml2 + '%' : '—';
+    const vLabelShort = mv === '能做' ? '✅ 能做' : mv === '暂缓' ? (p.autoVerdict ? '⏸ 暂缓(自动)' : '⏸ 暂缓') : mv === '不做' ? '🚫 不做' : '⚪ 未标';
+    const vChipCls = mv === '能做' ? 'v-go' : mv === '暂缓' ? 'v-wait' : mv === '不做' ? 'v-skip' : 'v-none';
+    let metaHtml = [
+      p.asin ? 'ASIN: ' + escapeHtml(p.asin) : '',
+      '销量' + (p.monthlySales || '?'),
+      '评论' + (p.reviewCount || '?'),
+      '⭐' + (p.rating || '?'),
+      (p.myPrice || p.price) ? '€' + (p.myPrice || p.price) : '',
+    ].filter(Boolean).join(' · ');
+    metaHtml += `<span class="only-m">${hasMl2 ? ' · ML2 ' + p.result.profit.ml2 + '%' : ''} · ${vLabelShort}${pend ? ' · 待验证' + pend + '项' : ''}</span>`;
+    metaHtml += (p.amazonUrl || (p.suppliers || []).length) ? ' · 🔗' : '';
     return `
       <div class="product-item" onclick="viewProduct(${i})">
         ${imgHtml}
-        <div class="body">
-        <div class="top">
-          <span class="name">${mainName}</span>
-          <span style="font-size:12px;color:var(--muted);">${date}</span>
+        <div class="p-main">
+          <div class="name">${mainName}</div>
         </div>
-        <div class="meta">
-          ${p.asin ? 'ASIN: ' + escapeHtml(p.asin) + ' · ' : ''}
-          销量${p.monthlySales || '?'} ·
-          评论${p.reviewCount || '?'} ·
-          ⭐${p.rating || '?'} ·
-          ${(p.myPrice || p.price) ? '€' + (p.myPrice || p.price) : ''} ·
-          ${vLabel}${ml2Txt}${pend ? ` · <span style="color:var(--yellow);">待验证${pend}项</span>` : ''}${(p.amazonUrl || (p.suppliers || []).length) ? ' · 🔗' : ''}
-        </div>
-        </div>
+        <div class="p-meta">${metaHtml}</div>
+        <div class="p-ml2 only-d">${ml2Pct}</div>
+        <div class="p-verdict only-d"><span class="tag-v ${vChipCls}">${vLabelShort}</span>${pend ? '<span class="pend">待验证' + pend + '项</span>' : ''}</div>
+        <div class="p-date">${date}</div>
         <button class="item-del" onclick="event.stopPropagation();deleteSingle(${i})" title="删除">🗑</button>
       </div>
     `;
@@ -3009,24 +3124,35 @@ function renderStats() {
   const waitPct = total > 0 ? Math.round(waitCount/total*100) : 0;
   const skipPct = total > 0 ? Math.round(skipCount/total*100) : 0;
   const nonePct = Math.max(0, 100 - goPct - waitPct - skipPct);
+  const barW = avgMargin === '—' ? 0 : Math.min(100, parseFloat(avgMargin) / 40 * 100);
+  const icoChart = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M5 20v-8M12 20V5M19 20v-5"/><path d="M3 20h18"/></svg>';
+  const icoTrend = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 17l6-6 4 4 8-8"/><path d="M15 7h6v6"/></svg>';
+  const icoCal = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M16 3v4M8 3v4M3 11h18"/></svg>';
 
   panel.innerHTML = `
     <div class="stats-grid">
-      <div class="stat-card"><div class="stat-value">${total}</div><div class="stat-label">📊 总分析数</div></div>
-      <div class="stat-card"><div class="stat-value" style="color:var(--accent);">${avgMargin}%</div><div class="stat-label">📈 平均 ML2</div></div>
       <div class="stat-card">
-        <div class="stat-value" style="font-size:14px;">
-          <span style="color:var(--green);">✅${goCount}</span> <span style="color:var(--yellow);">⏸${waitCount}</span> <span style="color:var(--red);">🚫${skipCount}</span> <span style="color:var(--muted);">⚪${noneCount}</span>
-        </div>
-        <div class="stat-label">我的判断 · 能做/暂缓/不做/未标</div>
-        <div class="stat-bar">
-          <div class="seg go" style="width:${goPct}%;"></div>
-          <div class="seg wait" style="width:${waitPct}%;"></div>
-          <div class="seg skip" style="width:${skipPct}%;"></div>
-          <div class="seg none" style="width:${nonePct}%;"></div>
+        <div class="sc-head"><span class="sc-chip">${icoChart}</span><span class="stat-value">${total}</span></div>
+        <div class="stat-label">总分析数</div>
+      </div>
+      <div class="stat-card hero">
+        <div class="sc-head"><span class="sc-chip" style="background:rgba(255,255,255,.18);color:#fff;">${icoTrend}</span><span class="stat-value">${avgMargin}%</span></div>
+        <div class="stat-label">平均 ML2 · 目标 30%</div>
+        <div class="sc-bar"><i style="width:${barW}%"></i></div>
+      </div>
+      <div class="stat-card">
+        <div class="sc-head"><span class="stat-value" style="font-size:13.5px;"><span style="color:var(--green);">✅${goCount}</span> <span style="color:var(--yellow);">⏸${waitCount}</span> <span style="color:var(--red);">🚫${skipCount}</span> <span style="color:var(--muted);">⚪${noneCount}</span></span></div>
+        <div class="stat-label">我的判断分布</div>
+        <div class="sc-bars">
+          <div class="b"><i style="width:${goPct}%;background:var(--green);"></i></div>
+          <div class="b"><i style="width:${waitPct}%;background:var(--yellow);"></i></div>
+          <div class="b"><i style="width:${skipPct}%;background:var(--red);"></i></div>
         </div>
       </div>
-      <div class="stat-card"><div class="stat-value" style="font-size:16px;">${latest}</div><div class="stat-label">🕐 最近分析</div></div>
+      <div class="stat-card">
+        <div class="sc-head"><span class="sc-chip y">${icoCal}</span><span class="stat-value" style="font-size:15px;">${latest}</span></div>
+        <div class="stat-label">最近分析</div>
+      </div>
     </div>
   `;
 }
