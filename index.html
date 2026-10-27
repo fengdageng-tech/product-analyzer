@@ -2732,7 +2732,7 @@ function refreshHlHint(rate) {
   if (hl.value === '' || Math.abs(v - 7.3) < 1e-9) {
     hint.style.color = 'var(--accent)';
     hint.textContent = '⏱ 今日牌价 ' + rate.toFixed(2) + ' · 已自动填入，可手动改';
-  } else if (Math.abs(v - rate) < 1e-9) {
+  } else if (Math.abs(v - rate) < 0.0051) {
     hint.style.color = 'var(--muted)';
     hint.textContent = '⏱ 已用今日牌价 ' + rate.toFixed(2);
   } else {
