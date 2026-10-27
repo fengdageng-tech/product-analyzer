@@ -172,10 +172,10 @@
   .gt-link:active { opacity: .7; }
 
   .new-product-btn {
-    display: block; width: 100%; padding: 12px; margin-bottom: 14px;
-    border-radius: 11px; border: 1px solid var(--border);
+    display: block; width: auto; margin: 0 auto 14px; padding: 8px 18px;
+    border-radius: 9px; border: 1px solid var(--border);
     background: rgba(255,255,255,0.04); color: var(--text);
-    font-size: 14px; font-weight: 600; cursor: pointer; font-family: inherit;
+    font-size: 13px; font-weight: 600; cursor: pointer; font-family: inherit;
   }
   .new-product-btn:active { opacity: .7; }
   .new-product-btn b { color: var(--accent); font-weight: 700; }
@@ -494,6 +494,120 @@
     .btn, .btn-export, .btn-outline, .btn-sm, .btn-danger, .export-row, .override-bar, .override-note { display: none !important; }
   }
 
+  /* ===== 游客演示模式 ===== */
+  .demo-banner {
+    border: 1px solid rgba(91,139,247,.55);
+    background: linear-gradient(180deg, rgba(91,139,247,.16), rgba(91,139,247,.06));
+    border-radius: 14px; padding: 13px 14px 12px; margin-bottom: 6px;
+  }
+  .demo-banner .hi { font-size: 12px; color: var(--accent); font-weight: 600; }
+  .demo-banner .t { font-size: 15px; font-weight: 700; margin: 2px 0 3px; }
+  .demo-banner .s { font-size: 12px; color: var(--muted); margin-bottom: 10px; }
+  .demo-cta {
+    display: inline-block; background: var(--accent); color: var(--on-accent);
+    border: none; border-radius: 9px; padding: 8px 18px;
+    font-size: 13px; font-weight: 700; cursor: pointer; font-family: inherit;
+  }
+  .demo-cta:active { opacity: .8; }
+  .demo-ribbon {
+    display: flex; justify-content: space-between; align-items: center;
+    background: rgba(91,139,247,.14); border: 1px solid rgba(91,139,247,.5);
+    border-radius: 10px; padding: 8px 12px; font-size: 12.5px; margin-bottom: 12px;
+  }
+  .demo-ribbon b { color: var(--accent); }
+  .demo-ribbon button {
+    background: transparent; border: 1px solid rgba(91,139,247,.55); color: var(--accent);
+    border-radius: 8px; padding: 3px 10px; font-size: 11.5px; font-weight: 600;
+    cursor: pointer; font-family: inherit;
+  }
+  /* ===== 历史工具栏 ===== */
+  .hist-tools { margin-bottom: 14px; }
+  .hist-search {
+    display: flex; align-items: center; gap: 7px;
+    background: var(--input-bg); border: 1px solid var(--border);
+    border-radius: 8px; padding: 0 12px; margin-bottom: 8px;
+  }
+  .hist-search input { background: transparent; border: none; padding: 10px 0; font-size: 14px; }
+  .hist-search input:focus { box-shadow: none; border: none; }
+  .hist-chips { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 8px; }
+  .hist-chip {
+    font-size: 12px; color: var(--muted); border: 1px solid var(--border);
+    border-radius: 999px; padding: 5px 11px; background: var(--card);
+    cursor: pointer; font-family: inherit;
+  }
+  .hist-chip.on { background: var(--accent); border-color: var(--accent); color: var(--on-accent); font-weight: 600; }
+  .hist-toolbar { display: flex; gap: 8px; align-items: center; }
+  .hist-toolbar select { width: auto; flex: 1; padding: 8px 10px; font-size: 12.5px; }
+  .btn-export-csv {
+    border: 1px solid var(--green); color: var(--green);
+    background: rgba(76,175,125,.08); border-radius: 8px; padding: 8px 13px;
+    font-size: 12.5px; font-weight: 600; cursor: pointer; white-space: nowrap; font-family: inherit;
+  }
+  .btn-export-csv:active { opacity: .7; }
+  /* 未同步红点 */
+  .unsync-badge { font-size: 11px; color: var(--red); font-weight: 600; white-space: nowrap; }
+  .unsync-badge i { display: inline-block; width: 7px; height: 7px; border-radius: 50%; background: var(--red); margin-right: 5px; vertical-align: 1px; }
+  /* ===== 简称与截断 ===== */
+  .product-item .name-en {
+    font-size: 11px; color: var(--muted); font-weight: 400; margin-top: 2px;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  }
+  .clamp2 { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+  .name-sub-line { font-size: 12px; color: var(--muted); font-weight: 400; margin-top: 2px; line-height: 1.5; }
+  /* ===== 待验证事项 ===== */
+  .verify-box {
+    background: var(--input-bg); border: 1px dashed rgba(91,139,247,.45);
+    border-radius: 10px; padding: 10px 12px; margin-top: 10px;
+  }
+  .verify-title { font-size: 12px; color: var(--muted); margin-bottom: 6px; display: flex; justify-content: space-between; align-items: center; }
+  .verify-item { display: flex; gap: 8px; align-items: flex-start; font-size: 13px; color: var(--text); padding: 4px 0; }
+  .verify-item input[type=checkbox] {
+    -webkit-appearance: auto !important; appearance: auto !important;
+    width: 15px; height: 15px; flex: none; margin: 3px 0 0;
+    accent-color: var(--accent); cursor: pointer; padding: 0;
+  }
+  .verify-item.done span { color: var(--muted); text-decoration: line-through; }
+  .verify-del { background: transparent; border: none; color: var(--muted); font-size: 11px; cursor: pointer; padding: 2px 4px; flex: none; font-family: inherit; }
+  .verify-del:active { color: var(--red); }
+  .verify-add { display: flex; gap: 6px; margin-top: 7px; }
+  .verify-add input { flex: 1; font-size: 12.5px; padding: 7px 10px; }
+  .verify-add button {
+    background: var(--accent); color: var(--on-accent); border: none;
+    border-radius: 8px; padding: 0 14px; font-size: 15px; cursor: pointer; font-family: inherit; font-weight: 700;
+  }
+  /* ===== 快速试算 ===== */
+  .trial-bar {
+    display: flex; justify-content: space-between; align-items: center;
+    background: rgba(76,175,125,.1); border: 1px solid rgba(76,175,125,.45);
+    border-radius: 10px; padding: 7px 11px; font-size: 12.5px; margin-bottom: 10px;
+  }
+  .trial-bar b { color: var(--green); }
+  .trial-bar button { background: transparent; border: none; color: var(--accent); font-weight: 600; cursor: pointer; font-size: 12px; font-family: inherit; padding: 0; }
+  .editable-val { border-bottom: 1px dashed rgba(91,139,247,.75); color: var(--accent); cursor: pointer; padding-bottom: 1px; }
+  .editable-val:after { content: ' ✎'; font-size: 10px; }
+  .trial-input {
+    width: 84px; background: var(--input-bg); border: 1px solid var(--accent);
+    border-radius: 6px; color: var(--text); font-size: 13px; padding: 2px 6px; text-align: right;
+  }
+  .delta-chip {
+    display: inline-block; background: rgba(76,175,125,.15); color: var(--green);
+    font-size: 11px; border-radius: 6px; padding: 2px 8px; margin-top: 9px; font-weight: 600;
+  }
+  /* ===== 费率表版本与编辑 ===== */
+  .rate-ver { display: flex; justify-content: space-between; align-items: center; font-size: 11px; color: var(--muted); margin-bottom: 8px; }
+  .rate-ver b { color: var(--accent); }
+  .rate-ver button {
+    font-size: 11px; color: var(--accent); background: rgba(91,139,247,.1);
+    border: 1px solid rgba(91,139,247,.35); border-radius: 6px; padding: 3px 9px;
+    cursor: pointer; font-weight: 600; font-family: inherit;
+  }
+  .rate-edit-list { max-height: 46vh; overflow-y: auto; border: 1px solid var(--border); border-radius: 8px; }
+  .rate-edit-row { display: flex; align-items: center; gap: 8px; padding: 7px 11px; border-bottom: 1px solid var(--border); font-size: 12px; color: var(--muted); }
+  .rate-edit-row:last-child { border-bottom: none; }
+  .rate-edit-row .w { flex: 1; color: var(--text); }
+  .rate-edit-row input { width: 92px; padding: 5px 8px; font-size: 12.5px; text-align: right; }
+  .btn-o:disabled { opacity: .55; cursor: default; }
+
   /* Responsive */
   @media (max-width: 400px) {
     .metric-grid { grid-template-columns: 1fr 1fr; }
@@ -521,10 +635,21 @@
 <!-- ====== Analyze Panel ====== -->
 <div class="panel active" id="panel-analyze">
 
+  <div class="demo-banner" id="demoBanner" style="display:none;">
+    <div class="hi">👋 第一次看？</div>
+    <div class="t">先看一份示例报告</div>
+    <div class="s">无需 Token · 只读 · 不影响任何真实数据</div>
+    <button type="button" class="demo-cta" onclick="enterDemoMode()">👀 看示例报告</button>
+  </div>
+
   <div class="group-title with-action"><span>🛒 产品信息</span><span class="gt-link" onclick="newProduct()">＋ 新建</span></div>
   <div class="form-group">
     <label>产品名称 <span class="req">*</span></label>
     <input autocomplete="off" id="productName" placeholder="">
+  </div>
+  <div class="form-group">
+    <label>简称 <span class="unit">(选填 · 历史列表显示这个，例：粉色苹果减压球·三颗装)</span></label>
+    <input autocomplete="off" id="shortName" placeholder="给这条记录起个好认的中文名">
   </div>
   <div class="row">
     <div class="form-group">
@@ -657,7 +782,8 @@
         </div>
         <div class="form-group">
           <label>汇率 <span class="unit">(€→¥)</span></label>
-          <input autocomplete="off" id="hl" type="number" step="0.01" value="7.3" placeholder="7.3" oninput="updateLivePrice()">
+          <input autocomplete="off" id="hl" type="number" step="0.01" value="7.3" placeholder="7.3" oninput="onHlInput()">
+          <div class="ad-hint" id="hlHint" style="font-size:11px;color:var(--muted);margin-top:4px;"></div>
         </div>
       </div>
     </div>
@@ -682,13 +808,26 @@
 
 <!-- ====== History Panel ====== -->
 <div class="panel" id="panel-history">
-  <button class="new-product-btn" onclick="newProduct()"><b>＋</b> 新建产品（清空表单从头填）</button>
+  <button class="new-product-btn" onclick="newProduct()"><b>＋</b> 新建产品</button>
   <div id="statsPanel"></div>
+  <div class="hist-tools" id="histTools" style="display:none;">
+    <div class="hist-search">🔍<input autocomplete="off" id="histSearch" placeholder="搜索品名 / 简称 / ASIN" oninput="renderProductList()"></div>
+    <div class="hist-chips" id="histChips"></div>
+    <div class="hist-toolbar">
+      <select id="histSort" onchange="renderProductList()">
+        <option value="new">时间 · 新→旧</option>
+        <option value="ml2desc">ML2 · 高→低</option>
+        <option value="ml2asc">ML2 · 低→高</option>
+      </select>
+      <button type="button" class="btn-export-csv" onclick="exportCsv()">⬇ 导出Excel</button>
+    </div>
+  </div>
   <div class="sync-section">
     <div class="sync-head" onclick="toggleSyncPanel()">
       <span class="sync-title">☁ 云端同步</span>
       <button type="button" class="sync-help" onclick="event.stopPropagation();toggleSyncHelp()" aria-label="Token 是什么">?</button>
       <span class="sync-badge" id="syncBadge">需要 Token</span>
+      <span class="unsync-badge" id="unsyncBadge" style="display:none;"><i></i>0 条未同步</span>
       <span class="sync-chev" id="syncChev">›</span>
     </div>
 
@@ -856,7 +995,9 @@ function renderRateTable() {
   const rates = FBA_RATES[country] || FBA_RATES.DE;
   const rows = rates[tier] || [];
   const hit = lookupFba(country, tier, getWeightKg());
-  let html = '<div style="font-size:11px;color:var(--muted);margin-bottom:6px;">' + COUNTRY_NAMES[country] + ' · ' + tier + ' · 欧元/件（仅限本国列）</div>';
+  const ver = localStorage.getItem(RATE_VER_KEY) || '2026-10';
+  let html = '<div class="rate-ver"><span>本表版本：<b>' + escapeHtml(ver) + '</b> · 德法意西 4 国 × 6 尺寸级别</span><button type="button" onclick="openRateEditor()">✎ 编辑表</button></div>';
+  html += '<div style="font-size:11px;color:var(--muted);margin-bottom:6px;">' + COUNTRY_NAMES[country] + ' · ' + tier + ' · 欧元/件（仅限本国列）</div>';
   html += '<table class="comparison-table" style="min-width:0;"><tr><th>重量段</th><th>配送费</th></tr>';
   rows.forEach(([max, fee]) => {
     const isHit = hit && !hit.over && hit.max === max;
@@ -1017,6 +1158,7 @@ function analyzeProduct(data) {
 function readFormValues() {
   return {
     productName: document.getElementById('productName').value.trim(),
+    shortName: document.getElementById('shortName').value.trim(),
     asin: document.getElementById('asin').value.trim(),
     price: document.getElementById('price').value,          // 竞品售价
     myPrice: document.getElementById('myPrice').value,      // 我的定价
@@ -1081,6 +1223,7 @@ function updateLivePrice() {
 }
 
 function generateReport() {
+  if (demoActive) { demoActive = false; updateDemoBanner(); } // 从演示模式点生成 → 正常出自己的报告
   const data = readFormValues();
 
   if (!data.productName) { showToast('⚠️ 请至少填写产品名称'); return; }
@@ -1135,6 +1278,9 @@ function generateReport() {
   data.manualNote = (existing && existing.manualNote) || '';
   data.autoVerdict = existing ? !!existing.autoVerdict : false;
   data.imageData = data.imageData || (existing && existing.imageData) || null;
+  data.shortName = data.shortName || (existing && existing.shortName) || '';
+  data.verifyItems = (existing && Array.isArray(existing.verifyItems)) ? existing.verifyItems : [];
+  if (existingIdx >= 0) data._updatedAt = Date.now();
 
   // 利润核算不出来 → 自动标暂缓；核算得出来 → 清掉自动暂缓（手动标记不受影响）
   if (!r.hasProfit) {
@@ -1160,9 +1306,15 @@ function generateReport() {
   }
 }
 
-function renderReport(data, r) {
+function renderReport(data, r, opts) {
+  opts = opts || {};
+  const demo = !!opts.demo;
+  lastReport = { data, r, demo };
   const colorMap = { green: 'green', yellow: 'yellow', red: 'red', blue: 'blue' };
-  const p = r.profit;
+  let p = r.profit;
+  const trialOn = !demo && !!trial && !!r.profit && (trial.price != null || trial.cost != null || trial.fba != null);
+  if (trialOn) p = trialProfitDisplay();
+  const canTrial = !demo && !!r.profit;
 
   // Top bad tags
   const badTagsHtml = r.topBad.map(([cat, info]) =>
@@ -1195,17 +1347,24 @@ function renderReport(data, r) {
   // Profit breakdown
   let profitHtml = '';
   if (p) {
+    const ed = (field, inner) => canTrial
+      ? `<span class="editable-val" onclick="startTrialEdit('${field}', this)">${inner}</span>`
+      : inner;
+    const dispPrice = (p.price != null ? p.price : r.price);
+    const dispFba = (p.fbaFeeRaw != null ? p.fbaFeeRaw : r.fbaFee);
+    const deltaPct = trialOn ? (parseFloat(p.ml2) - parseFloat(r.profit.ml2)) : 0;
     profitHtml = `
+      ${trialOn ? `<div class="trial-bar"><span>🧪 试算中 · ${trialDesc()}</span><button type="button" onclick="clearTrial()">恢复原值</button></div>` : ''}
       <div class="collapsible open">
         <div class="collapsible-trigger" onclick="this.parentElement.classList.toggle('open')">
-          <span class="arrow">▶</span> 💰 利润拆解（€）· 利润率 ${p.ml2}%
+          <span class="arrow">▶</span> 💰 利润拆解（€）· 利润率 ${p.ml2}%${trialOn ? ' · 试算' : ''}
         </div>
         <div class="collapsible-body">
         <div style="font-size:13px;line-height:2.2;padding:8px 0;">
           <table style="width:100%;border-collapse:collapse;color:var(--text);">
             <tr>
               <td style="padding:3px 0;color:var(--muted);">售价（我的定价）</td>
-              <td style="text-align:right;font-weight:700;">€${r.price.toFixed(2)}</td>
+              <td style="text-align:right;font-weight:700;">${ed('price', '€' + Number(dispPrice).toFixed(2))}</td>
             </tr>
             <tr>
               <td style="padding:3px 0;color:var(--muted);">➖ 佣金（15.4%）</td>
@@ -1213,11 +1372,11 @@ function renderReport(data, r) {
             </tr>
             <tr>
               <td style="padding:3px 0;color:var(--muted);">➖ 采购+头程（¥${p.tu} ÷ ${r.hl}）</td>
-              <td style="text-align:right;color:var(--red);">−€${p.cb}</td>
+              <td style="text-align:right;color:var(--red);">${ed('cost', '−€' + p.cb)}</td>
             </tr>
             <tr>
               <td style="padding:3px 0;color:var(--muted);">➖ FBA配送费${r.sizeTier ? '（' + (COUNTRY_NAMES[data.vatCountry] || '德国') + '·' + r.sizeTier + (r.fbaBracket ? '·≤' + r.fbaBracket : '') + '）' : ''}</td>
-              <td style="text-align:right;color:var(--red);">−€${r.fbaFee.toFixed(2)}</td>
+              <td style="text-align:right;color:var(--red);">${ed('fba', '−€' + Number(dispFba).toFixed(2))}</td>
             </tr>
             <tr style="border-bottom:1px dashed var(--border);">
               <td style="padding:3px 0;color:var(--muted);">➖ 增值税（${p.vatPct}%）</td>
@@ -1238,6 +1397,7 @@ function renderReport(data, r) {
           <div class="ml2-item"><span class="k">参考广告出价</span><span class="v">€${p.refBid}</span></div>
           <div class="ml2-item"><span class="k">达标售价(${p.targetPct}%)</span><span class="v" style="color:${p.reached ? 'var(--green)' : 'var(--yellow)'};">${p.targetPrice ? '€' + p.targetPrice : '—'}</span></div>
         </div>
+        ${trialOn ? `<span class="delta-chip">ML2 ${p.ml2}%（原 ${r.profit.ml2}% · ${deltaPct >= 0 ? '+' : ''}${deltaPct.toFixed(1)}）</span>` : ''}
         </div>
       </div>
     `;
@@ -1285,10 +1445,15 @@ function renderReport(data, r) {
        <div class="link-list">${linkItems.map(l => `<a class="ext-link" href="${escapeAttr(l.url)}" target="_blank" rel="noopener noreferrer">${escapeHtml(l.label)}</a>`).join('')}</div>`
     : '';
 
+  const titleHtml = data.shortName
+    ? `${escapeHtml(data.shortName)}<div class="name-sub-line">${escapeHtml(data.productName || '')}</div>`
+    : escapeHtml(data.productName);
+
   const html = `
+    ${demo ? `<div class="demo-ribbon"><span>📖 <b>演示模式</b> · 只读示例</span><button type="button" onclick="exitDemoMode()">退出演示</button></div>` : ''}
     <div class="card" id="report-card" style="border-top: 3px solid var(--accent);">
       <div class="card-header">
-        <div class="product-name">${escapeHtml(data.productName)}</div>
+        <div class="product-name">${titleHtml}</div>
         <span class="verdict ${vClass}">${vText}</span>
       </div>
       <div style="font-size:12px;color:var(--muted);margin-bottom:12px;">
@@ -1338,6 +1503,16 @@ function renderReport(data, r) {
 
       <!-- Manual verdict -->
       <div class="section-title">📝 我的判断</div>
+      ${demo ? `
+      <div class="override-bar">
+        <button type="button" class="btn-o ${mv==='能做'?'go-active':''}" disabled>✅ 能做</button>
+        <button type="button" class="btn-o ${mv==='暂缓'?'wait-active':''}" disabled>⏸ 暂缓</button>
+        <button type="button" class="btn-o ${mv==='不做'?'skip-active':''}" disabled>🚫 不做</button>
+      </div>
+      ${data.manualNote ? `<div class="override-note"><input value="${escapeHtml(data.manualNote)}" disabled></div>` : ''}
+      <div class="verify-box">${renderVerifyStatic(data)}</div>
+      <div style="font-size:11px;color:var(--muted);text-align:center;margin-top:8px;">演示模式：只能看，不能改 · 退出后不留任何痕迹</div>
+      ` : `
       <div class="override-bar">
         <button class="btn-o ${mv==='能做'?'go-active':''}" onclick="overrideVerdict('${data.asin||data.productName}','能做')">✅ 能做</button>
         <button class="btn-o ${mv==='暂缓'?'wait-active':''}" onclick="overrideVerdict('${data.asin||data.productName}','暂缓')">⏸ 暂缓</button>
@@ -1346,13 +1521,16 @@ function renderReport(data, r) {
       <div class="override-note">
         <input autocomplete="off" placeholder="备注原因（选填）" value="${escapeHtml(data.manualNote||'')}" onchange="saveOverrideNote('${data.asin||data.productName}',this.value)">
       </div>
+      <div class="verify-box" id="verifyBox">${renderVerifyBoxInner(data)}</div>
+      `}
 
       ${compHtml}
 
+      ${demo ? '' : `
       <div class="export-row">
         <button class="btn-export" onclick="exportImage()">📸 保存图片</button>
         <button class="btn-outline btn-sm" style="flex:1" onclick="deleteProduct('${data.asin || data.productName}')">🗑 删除</button>
-      </div>
+      </div>`}
     </div>
   `;
 
@@ -1360,11 +1538,52 @@ function renderReport(data, r) {
 }
 
 // ==================== HISTORY PANEL ====================
+let histFilter = 'all';
+
+function setHistFilter(f) {
+  histFilter = f;
+  renderProductList();
+}
+
+function renderHistChips() {
+  const box = document.getElementById('histChips');
+  if (!box) return;
+  const defs = [['all', '全部'], ['能做', '✅ 能做'], ['暂缓', '⏸ 暂缓'], ['不做', '🚫 不做'], ['未标', '未标']];
+  box.innerHTML = defs.map(([val, label]) =>
+    `<button type="button" class="hist-chip${histFilter === val ? ' on' : ''}" onclick="setHistFilter('${val}')">${label}</button>`
+  ).join('');
+}
+
+function getHistVisible(products) {
+  const searchEl = document.getElementById('histSearch');
+  const q = ((searchEl && searchEl.value) || '').trim().toLowerCase();
+  let list = products.map((p, i) => ({ p, i }));
+  if (q) {
+    list = list.filter(({ p }) =>
+      ((p.shortName || '') + ' ' + (p.productName || '') + ' ' + (p.asin || '')).toLowerCase().includes(q));
+  }
+  if (histFilter !== 'all') {
+    list = list.filter(({ p }) => histFilter === '未标' ? !p.manualVerdict : p.manualVerdict === histFilter);
+  }
+  const sortEl = document.getElementById('histSort');
+  const sort = (sortEl && sortEl.value) || 'new';
+  const ml2of = p => parseFloat(p.result && p.result.profit && p.result.profit.ml2) || -1;
+  if (sort === 'ml2desc') list.sort((a, b) => ml2of(b.p) - ml2of(a.p));
+  else if (sort === 'ml2asc') list.sort((a, b) => ml2of(a.p) - ml2of(b.p));
+  else list.sort((a, b) => (Date.parse(b.p.createdAt) || 0) - (Date.parse(a.p.createdAt) || 0));
+  return list;
+}
+
 function renderProductList() {
   const products = loadProducts();
   const container = document.getElementById('productList');
+  const tools = document.getElementById('histTools');
+  if (tools) tools.style.display = products.length ? 'block' : 'none';
+  updateUnsyncBadge();
+  renderHistChips();
 
   if (products.length === 0) {
+    histFilter = 'all';
     const hint = getToken()
       ? '<br><span style="font-size:12px;">已设置 Token —— 点「☁ 同步」可拉取云端记录</span>'
       : '<br><span style="font-size:12px;">去「分析产品」页添加你的第一个产品</span>';
@@ -1372,19 +1591,30 @@ function renderProductList() {
     return;
   }
 
-  container.innerHTML = products.map((p, i) => {
+  const visible = getHistVisible(products);
+  if (!visible.length) {
+    container.innerHTML = '<div class="empty-state">🔍 没有符合条件的记录<br><span style="font-size:12px;">换个关键词或筛选条件试试</span></div>';
+    return;
+  }
+
+  container.innerHTML = visible.map(({ p, i }) => {
     const mv = p.manualVerdict;
     const vLabel = mv === '能做' ? '✅ 能做' : mv === '暂缓' ? (p.autoVerdict ? '⏸ 暂缓(自动)' : '⏸ 暂缓') : mv === '不做' ? '🚫 不做' : '⚪ 未标';
     const date = p.createdAt ? new Date(p.createdAt).toLocaleDateString('zh-CN') : '未知';
     const imgHtml = p.imageData
       ? `<img class="list-thumb" src="${p.imageData.value.replace(/"/g, '&quot;')}" referrerpolicy="no-referrer" onerror="this.style.display='none'">`
       : '';
+    const mainName = p.shortName
+      ? `${escapeHtml(p.shortName)}<div class="name-en">${escapeHtml(p.productName || '')}</div>`
+      : `<span class="clamp2">${escapeHtml(p.productName || '未命名')}</span>`;
+    const pend = mv === '暂缓' ? pendingVerifyCount(p) : 0;
+    const ml2Txt = (p.result && p.result.profit) ? ' · ML2 ' + p.result.profit.ml2 + '%' : '';
     return `
       <div class="product-item" onclick="viewProduct(${i})">
         ${imgHtml}
         <div class="body">
         <div class="top">
-          <span class="name">${escapeHtml(p.productName || '未命名')}</span>
+          <span class="name">${mainName}</span>
           <span style="font-size:12px;color:var(--muted);">${date}</span>
         </div>
         <div class="meta">
@@ -1393,7 +1623,7 @@ function renderProductList() {
           评论${p.reviewCount || '?'} ·
           ⭐${p.rating || '?'} ·
           ${(p.myPrice || p.price) ? '€' + (p.myPrice || p.price) : ''} ·
-          ${vLabel}${(p.amazonUrl || (p.suppliers || []).length) ? ' · 🔗' : ''}
+          ${vLabel}${ml2Txt}${pend ? ` · <span style="color:var(--yellow);">待验证${pend}项</span>` : ''}${(p.amazonUrl || (p.suppliers || []).length) ? ' · 🔗' : ''}
         </div>
         </div>
         <button class="item-del" onclick="event.stopPropagation();deleteSingle(${i})" title="删除">🗑</button>
@@ -1404,7 +1634,8 @@ function renderProductList() {
 
 // 清空表单，开一条全新的产品（不会删除任何已保存的记录）
 function newProduct() {
-  ['productName', 'asin', 'price', 'myPrice', 'monthlySales', 'reviewCount',
+  trial = null;
+  ['productName', 'shortName', 'asin', 'price', 'myPrice', 'monthlySales', 'reviewCount',
    'rating', 'rank', 'cost1688', 'negativeReviews', 'amazonUrl', 'weightG', 'fbaFee']
     .forEach(id => {
       const el = document.getElementById(id);
@@ -1424,6 +1655,7 @@ function newProduct() {
 
   document.getElementById('costParamSection').classList.remove('open');
   document.getElementById('supplierSection').classList.remove('open');
+  refreshHlHint(cachedRate());
   clearSuppliers();
   setProdType('gongmo');
   clearImage();
@@ -1443,9 +1675,11 @@ function viewProduct(index) {
   const products = loadProducts();
   const p = products[index];
   if (!p) return;
+  trial = null;
 
   // Fill form
   document.getElementById('productName').value = p.productName || '';
+  document.getElementById('shortName').value = p.shortName || '';
   document.getElementById('asin').value = p.asin || '';
   document.getElementById('price').value = p.price || '';
   document.getElementById('myPrice').value = p.myPrice || '';
@@ -1461,6 +1695,7 @@ function viewProduct(index) {
   document.getElementById('fbaFee').value = p.fbaFee || '';
   document.getElementById('vatCountry').value = p.vatCountry || 'DE';
   document.getElementById('hl').value = p.hl || '7.3';
+  refreshHlHint(cachedRate());
   setProdType(p.prodType || 'gongmo');
   autoFillFba(true);
   document.getElementById('negativeReviews').value = p.negativeReviews || '';
@@ -2045,6 +2280,7 @@ function setProdType(t) {
 // 成本参数折叠区
 function toggleCostParams() {
   document.getElementById('costParamSection').classList.toggle('open');
+  autoApplyRate(); // 打开成本区时顺手取今日牌价（有当天缓存，不会重复请求）
 }
 
 // ==================== 供应商链接 ====================
@@ -2153,7 +2389,10 @@ function overrideVerdict(id, newVerdict) {
   if (!p) return;
   p.manualVerdict = newVerdict === p.manualVerdict ? null : newVerdict;
   p.autoVerdict = false;
+  p._updatedAt = Date.now();
   saveProducts(products);
+  renderProductList();
+  renderStats();
   renderReport(p, p.result);
   showToast('已记录你的判断');
 }
@@ -2163,7 +2402,416 @@ function saveOverrideNote(id, note) {
   const p = products.find(p => (p.asin || p.productName) === id);
   if (!p) return;
   p.manualNote = note;
+  p._updatedAt = Date.now();
   saveProducts(products);
+  renderProductList();
+}
+
+// ==================== 待验证事项 ====================
+function recId(p) { return p.asin || p.productName; }
+
+function pendingVerifyCount(p) {
+  return ((p && p.verifyItems) || []).filter(v => v && v.text && !v.done).length;
+}
+
+function renderVerifyBoxInner(data) {
+  const id = recId(data);
+  const items = (data.verifyItems || []).filter(v => v && v.text);
+  const rows = items.map((v, i) => `
+    <div class="verify-item${v.done ? ' done' : ''}">
+      <input type="checkbox" ${v.done ? 'checked' : ''} onchange="toggleVerifyItem('${escapeAttr(id)}',${i})">
+      <span style="flex:1;min-width:0;">${escapeHtml(v.text)}</span>
+      <button type="button" class="verify-del" onclick="removeVerifyItem('${escapeAttr(id)}',${i})">✕</button>
+    </div>`).join('');
+  return `
+    <div class="verify-title"><span>待验证事项（完成打勾）</span><span style="font-size:10.5px;">暂缓品的前提条件</span></div>
+    ${rows || '<div style="font-size:12px;color:var(--muted);padding:2px 0 4px;">暂缓的品把待确认的前提写在这里（如：改良款报价、价格带验证）</div>'}
+    <div class="verify-add">
+      <input autocomplete="off" id="verifyInput" placeholder="添加一条待验证事项" onkeydown="if(event.key==='Enter')addVerifyItem('${escapeAttr(id)}')">
+      <button type="button" onclick="addVerifyItem('${escapeAttr(id)}')">＋</button>
+    </div>`;
+}
+
+function renderVerifyStatic(data) {
+  const items = (data.verifyItems || []).filter(v => v && v.text);
+  const rows = items.map(v => `
+    <div class="verify-item${v.done ? ' done' : ''}">
+      <input type="checkbox" ${v.done ? 'checked' : ''} disabled>
+      <span style="flex:1;min-width:0;">${escapeHtml(v.text)}</span>
+    </div>`).join('');
+  return `<div class="verify-title"><span>待验证事项（完成打勾）</span></div>` +
+    (rows || '<div style="font-size:12px;color:var(--muted);">本示例暂无待验证事项</div>');
+}
+
+function addVerifyItem(id) {
+  const input = document.getElementById('verifyInput');
+  const text = ((input && input.value) || '').trim();
+  if (!text) { showToast('先填写验证内容'); return; }
+  const products = loadProducts();
+  const p = products.find(q => recId(q) === id);
+  if (!p) return;
+  p.verifyItems = (p.verifyItems || []).concat([{ text, done: false }]);
+  p._updatedAt = Date.now();
+  saveProducts(products);
+  renderReport(p, p.result);
+  renderProductList();
+  renderStats();
+}
+
+function toggleVerifyItem(id, idx) {
+  const products = loadProducts();
+  const p = products.find(q => recId(q) === id);
+  if (!p || !p.verifyItems || !p.verifyItems[idx]) return;
+  p.verifyItems[idx].done = !p.verifyItems[idx].done;
+  p._updatedAt = Date.now();
+  saveProducts(products);
+  renderReport(p, p.result);
+  renderProductList();
+  renderStats();
+}
+
+function removeVerifyItem(id, idx) {
+  const products = loadProducts();
+  const p = products.find(q => recId(q) === id);
+  if (!p || !p.verifyItems || !p.verifyItems[idx]) return;
+  p.verifyItems.splice(idx, 1);
+  p._updatedAt = Date.now();
+  saveProducts(products);
+  renderReport(p, p.result);
+  renderProductList();
+}
+
+// ==================== 快速试算（报告页直接改数字，不保存） ====================
+let trial = null;      // { price, cost, fba } 只存用户改过的字段
+let lastReport = null; // { data, r, demo }
+
+const TRIAL_COMMISSION = 0.154;
+
+function currentTrialVal(field) {
+  const r = lastReport && lastReport.r;
+  if (!r) return 0;
+  if (field === 'price') return trial && trial.price != null ? trial.price : r.price;
+  if (field === 'cost') return trial && trial.cost != null ? trial.cost : r.costCNY;
+  if (field === 'fba') return trial && trial.fba != null ? trial.fba : r.fbaFee;
+  return 0;
+}
+
+// 与 analyzeProduct 同口径的利润重算（仅用于试算显示，不写回记录）
+function trialProfitDisplay() {
+  const { data, r } = lastReport;
+  if (!r || !r.profit) return r && r.profit;
+  const price = trial && trial.price != null ? trial.price : r.price;
+  const cg = trial && trial.cost != null ? trial.cost : r.costCNY;
+  const fba = trial && trial.fba != null ? trial.fba : r.fbaFee;
+  const hl = r.hl || 7.3;
+  const tu = r.weightKg * r.tcRate + cg;
+  const cb = tu / hl;
+  const referralFee = price * TRIAL_COMMISSION;
+  const vatAmount = price * r.vat / (1 + r.vat);
+  const ml = price - referralFee - cb - fba - vatAmount;
+  const ml2 = price > 0 ? ml / price : 0;
+  const hb = price * ml2 * hl;
+  const hb2 = tu > 0 ? hb / tu : 0;
+  const BMv = 0.22;
+  const denomBase = 0.846 - r.vat / (1 + r.vat);
+  const floorPrice = (cb + fba) / (denomBase - BMv);
+  const promoPrice30 = (cb + fba + 0.5) / (1 - 0.05 - TRIAL_COMMISSION - 0.95 * r.vat / (1 + r.vat) - BMv);
+  const refBid = ml / 10;
+  const targetMargin = (parseFloat(data.targetMargin) || 30) / 100;
+  const denom = denomBase - targetMargin;
+  const targetPrice = denom > 0 ? (cb + fba) / denom : null;
+  const floorAcos = (price - 0.05 * price - 0.153 * price - 0.95 * price * r.vat / (1 + r.vat) - cb - fba - 0.5) / price;
+  return {
+    price, fbaFeeRaw: fba,
+    tu: tu.toFixed(2), cb: cb.toFixed(2), referralFee: referralFee.toFixed(2),
+    vatAmount: vatAmount.toFixed(2), vatPct: Math.round(r.vat * 100),
+    ml: ml.toFixed(2), ml2: (ml2 * 100).toFixed(1),
+    hb: hb.toFixed(1), hb2: hb2.toFixed(2),
+    floorPrice: floorPrice.toFixed(2), floorAcos: (floorAcos * 100).toFixed(1),
+    promoPrice30: promoPrice30.toFixed(2), refBid: refBid.toFixed(2),
+    targetPrice: targetPrice === null ? null : targetPrice.toFixed(2),
+    targetPct: Math.round(targetMargin * 100),
+    reached: ml2 >= targetMargin,
+  };
+}
+
+function trialDesc() {
+  const r = lastReport && lastReport.r;
+  if (!r) return '';
+  const parts = [];
+  if (trial.price != null) parts.push('售价 €' + r.price.toFixed(2) + ' → €' + trial.price.toFixed(2));
+  if (trial.cost != null) parts.push('采购 ¥' + Number(r.costCNY).toFixed(2) + ' → ¥' + trial.cost.toFixed(2));
+  if (trial.fba != null) parts.push('FBA €' + r.fbaFee.toFixed(2) + ' → €' + trial.fba.toFixed(2));
+  return parts.join(' · ');
+}
+
+function startTrialEdit(field, el) {
+  if (!lastReport || !lastReport.r.profit) return;
+  const input = document.createElement('input');
+  input.type = 'number';
+  input.step = '0.01';
+  input.className = 'trial-input';
+  input.value = Number(currentTrialVal(field)).toFixed(2);
+  el.replaceWith(input);
+  input.focus();
+  input.select();
+  const commit = () => {
+    const v = parseFloat(input.value);
+    if (!isNaN(v) && v >= 0) {
+      trial = trial || {};
+      trial[field] = v;
+    }
+    if (lastReport) renderReport(lastReport.data, lastReport.r);
+  };
+  input.addEventListener('keydown', e => { if (e.key === 'Enter') input.blur(); });
+  input.addEventListener('blur', commit);
+}
+
+function clearTrial() {
+  trial = null;
+  if (lastReport) renderReport(lastReport.data, lastReport.r);
+}
+
+// ==================== 游客演示模式 ====================
+let demoActive = false;
+
+const DEMO_RECORD = {
+  productName: 'Squeezable Fruit Stress Ball, Stretchy Squeeze Putty, Soft Squishy Hand Game for Relaxation, Focus, Desk and Gift (A Pink Apple)',
+  shortName: '粉色苹果减压球 · 三颗装',
+  asin: 'B0H1VHWB2M',
+  price: '10',
+  myPrice: '16.6',
+  monthlySales: '539',
+  reviewCount: '4',
+  rating: '3.5',
+  rank: '34',
+  prodType: 'gongmo',
+  cost1688: '14.4',
+  targetMargin: '30',
+  weightG: '250',
+  sizeTier: '小包裹',
+  tcRate: '30',
+  fbaFee: '3.40',
+  vatCountry: 'DE',
+  hl: '7.3',
+  negativeReviews: '一开始气味却相当难闻。几小时后气味会消散，之后就再无任何气味。\n可惜的是，它非常坚硬，因此揉捏起来相当困难。',
+  amazonUrl: 'https://www.amazon.de/-/en/Squeezable-Stretchy-Squeeze-Squishy-Relaxation/dp/B0H1VHWB2M',
+  suppliers: [{ name: '三个颜色为一套价格14.4', url: 'https://detail.1688.com/offer/1053329948129.html', idx: 1 }],
+  imageData: { type: 'url', value: 'https://m.media-amazon.com/images/I/61SLS2aMJQL._AC_SL1500_.jpg' },
+  manualVerdict: '暂缓',
+  manualNote: '差评雷区未解决，先等改良报价',
+  autoVerdict: false,
+  verifyItems: [
+    { text: '供应商无味软款报价 ≤ ¥5.5/颗', done: false },
+    { text: '类目内三件套实际价格带确认', done: false },
+  ],
+  createdAt: '2026-10-28T01:21:55.000Z',
+  competitors: [],
+};
+DEMO_RECORD.result = analyzeProduct(DEMO_RECORD);
+
+function updateDemoBanner() {
+  const b = document.getElementById('demoBanner');
+  if (b) b.style.display = (!getToken() && !demoActive) ? 'block' : 'none';
+}
+
+function enterDemoMode() {
+  demoActive = true;
+  trial = null;
+  updateDemoBanner();
+  switchTab('analyze');
+  renderReport(DEMO_RECORD, DEMO_RECORD.result, { demo: true });
+  document.getElementById('reportOutput').scrollIntoView({ behavior: 'smooth' });
+}
+
+function exitDemoMode() {
+  demoActive = false;
+  trial = null;
+  document.getElementById('reportOutput').innerHTML = '';
+  updateDemoBanner();
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+  showToast('已退出演示模式');
+}
+
+// ==================== 历史：搜索 / 筛选 / 排序 / 导出CSV ====================
+
+function exportCsv() {
+  const products = loadProducts();
+  if (!products.length) { showToast('⚠️ 没有记录可导出'); return; }
+  const rows = [['品名', '简称', 'ASIN', '判断', '备注', '待验证(未完成)', 'ML2%', '售价€', '竞品价€', '月销', '评论', '评分', '小类排名', '采购成本¥', 'FBA€', '利润€', '重量g', '国家', '尺寸', '分析时间']];
+  products.forEach(p => {
+    const pr = p.result && p.result.profit;
+    const pend = (p.verifyItems || []).filter(v => v && v.text && !v.done).map(v => v.text).join(' / ');
+    rows.push([
+      p.productName || '', p.shortName || '', p.asin || '',
+      p.manualVerdict || '未标', p.manualNote || '', pend,
+      pr ? pr.ml2 : '', p.myPrice || p.price || '', p.price || '',
+      p.monthlySales || '', p.reviewCount || '', p.rating || '', p.rank || '',
+      p.cost1688 || '', p.fbaFee || '', pr ? pr.ml : '',
+      p.weightG || '', p.vatCountry || '', p.sizeTier || '',
+      p.createdAt ? new Date(p.createdAt).toLocaleString('zh-CN') : '',
+    ]);
+  });
+  const csv = '\uFEFF' + rows.map(r => r.map(c => {
+    c = String(c == null ? '' : c);
+    return /[",\n\r]/.test(c) ? '"' + c.replace(/"/g, '""') + '"' : c;
+  }).join(',')).join('\r\n');
+  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = '选品记录_' + new Date().toISOString().slice(0, 10) + '.csv';
+  a.click();
+  URL.revokeObjectURL(url);
+  showToast('📤 已导出 CSV（Excel 可直接打开）');
+}
+
+// ==================== 未同步红点提醒 ====================
+const SYNC_AT_KEY = 'product_analyzer_sync_at';
+
+function updateUnsyncBadge() {
+  const el = document.getElementById('unsyncBadge');
+  if (!el) return;
+  const at = parseInt(localStorage.getItem(SYNC_AT_KEY)) || 0;
+  let n = 0;
+  if (at > 0) {
+    n = loadProducts().filter(p =>
+      Math.max(Date.parse(p.createdAt) || 0, p._updatedAt || 0, p._importedAt || 0) > at
+    ).length;
+  }
+  el.style.display = n > 0 ? '' : 'none';
+  if (n > 0) el.innerHTML = '<i></i>' + n + ' 条未同步';
+}
+
+// ==================== 汇率自动（手动填写优先） ====================
+const RATE_CACHE_KEY = 'eur_cny_rate_cache';
+
+function todayStr() { return new Date().toISOString().slice(0, 10); }
+
+function cachedRate() {
+  try {
+    const c = JSON.parse(localStorage.getItem(RATE_CACHE_KEY) || 'null');
+    if (c && c.date === todayStr() && c.rate > 0) return c.rate;
+  } catch (e) {}
+  return null;
+}
+
+async function fetchEurCny() {
+  const cached = cachedRate();
+  if (cached) return cached;
+  const save = rate => { localStorage.setItem(RATE_CACHE_KEY, JSON.stringify({ rate, date: todayStr() })); return rate; };
+  try {
+    const res = await fetch('https://api.frankfurter.app/latest?from=EUR&to=CNY', { cache: 'no-store' });
+    if (res.ok) {
+      const j = await res.json();
+      const rate = parseFloat(j.rates && j.rates.CNY);
+      if (rate > 0) return save(rate);
+    }
+  } catch (e) {}
+  try {
+    const res = await fetch('https://open.er-api.com/v6/latest/EUR', { cache: 'no-store' });
+    if (res.ok) {
+      const j = await res.json();
+      const rate = parseFloat(j.rates && j.rates.CNY);
+      if (rate > 0) return save(rate);
+    }
+  } catch (e) {}
+  return null;
+}
+
+function refreshHlHint(rate) {
+  const hint = document.getElementById('hlHint');
+  const hl = document.getElementById('hl');
+  if (!hint || !hl) return;
+  if (!rate) {
+    hint.style.color = 'var(--muted)';
+    hint.textContent = '牌价获取失败 · 暂用默认 7.3（可手动填）';
+    return;
+  }
+  const v = parseFloat(hl.value);
+  if (hl.value === '' || Math.abs(v - 7.3) < 1e-9) {
+    hint.style.color = 'var(--accent)';
+    hint.textContent = '⏱ 今日牌价 ' + rate.toFixed(2) + ' · 已自动填入，可手动改';
+  } else if (Math.abs(v - rate) < 1e-9) {
+    hint.style.color = 'var(--muted)';
+    hint.textContent = '⏱ 已用今日牌价 ' + rate.toFixed(2);
+  } else {
+    hint.style.color = 'var(--muted)';
+    hint.textContent = '手动汇率 ' + hl.value + '（今日牌价 ' + rate.toFixed(2) + '）';
+  }
+}
+
+function onHlInput() {
+  updateLivePrice();
+  refreshHlHint(cachedRate());
+}
+
+// 默认值(7.3)或空 → 自动填今日牌价；手动填过的数字一律不动
+async function autoApplyRate() {
+  const rate = await fetchEurCny();
+  refreshHlHint(rate);
+  if (!rate) return;
+  const hl = document.getElementById('hl');
+  if (!hl || document.activeElement === hl) return;
+  const v = parseFloat(hl.value);
+  if (hl.value === '' || Math.abs(v - 7.3) < 1e-9) {
+    hl.value = rate.toFixed(2);
+    updateLivePrice();
+    refreshHlHint(rate);
+  }
+}
+
+// ==================== 费率表版本与自助编辑 ====================
+const RATE_OVR_KEY = 'fba_rates_override_v1';
+const RATE_VER_KEY = 'fba_rates_version';
+let rateEditCtx = null; // { country, tier }
+
+function applyRateOverride() {
+  try {
+    const ovr = JSON.parse(localStorage.getItem(RATE_OVR_KEY) || 'null');
+    if (!ovr || typeof ovr !== 'object') return;
+    ['DE', 'FR', 'IT', 'ES'].forEach(c => {
+      if (ovr[c] && typeof ovr[c] === 'object') FBA_RATES[c] = ovr[c];
+    });
+  } catch (e) {}
+}
+
+function openRateEditor() {
+  const country = document.getElementById('vatCountry').value || 'DE';
+  const tier = document.getElementById('sizeTier').value || '小包裹';
+  rateEditCtx = { country, tier };
+  const rows = (FBA_RATES[country] || FBA_RATES.DE)[tier] || [];
+  document.getElementById('rateModalSub').textContent =
+    '编辑 ' + COUNTRY_NAMES[country] + ' · ' + tier + ' 的配送费（欧元/件）：重量段不动，只改价格。其他国家/尺寸的表格切换后点「编辑表」再改。';
+  document.getElementById('rateEditList').innerHTML = rows.map((r, i) => `
+    <div class="rate-edit-row">
+      <span class="w">≤ ${fmtKg(r[0])}</span>
+      <span>€</span>
+      <input type="number" step="0.01" min="0" class="fee" data-i="${i}" value="${r[1].toFixed(2)}">
+    </div>`).join('');
+  document.getElementById('rateMsg').textContent = '';
+  document.getElementById('rateModal').classList.add('show');
+}
+
+function closeRateModal() {
+  document.getElementById('rateModal').classList.remove('show');
+}
+
+function saveRateEditor() {
+  if (!rateEditCtx) return;
+  const inputs = Array.from(document.querySelectorAll('#rateEditList .fee'));
+  const rows = (FBA_RATES[rateEditCtx.country] || FBA_RATES.DE)[rateEditCtx.tier] || [];
+  const next = rows.map((r, i) => {
+    const v = parseFloat(inputs[i] && inputs[i].value);
+    return [r[0], (isNaN(v) || v < 0) ? r[1] : v];
+  });
+  FBA_RATES[rateEditCtx.country][rateEditCtx.tier] = next;
+  try { localStorage.setItem(RATE_OVR_KEY, JSON.stringify(FBA_RATES)); } catch (e) {}
+  localStorage.setItem(RATE_VER_KEY, '自定义 · ' + new Date().toLocaleDateString('zh-CN'));
+  closeRateModal();
+  renderRateTable();
+  autoFillFba(true);
+  showToast('✅ 费率已更新（保存在本机，换设备需重新设置）');
 }
 
 // Export as image
@@ -2458,8 +3106,8 @@ async function refreshCloudInfo() {
 // 表单顶部那行不刺眼的提醒
 function updateTokenRemind() {
   const el = document.getElementById('tokenRemind');
-  if (!el) return;
-  el.style.display = getToken() ? 'none' : 'block';
+  if (el) el.style.display = getToken() ? 'none' : 'block';
+  updateDemoBanner();
 }
 
 function gotoSyncSetting() {
@@ -2562,6 +3210,8 @@ async function syncNow() {
 
     saveProducts(live);
     localStorage.setItem(CLOUD_SEEN_KEY, new Date().toLocaleString('zh-CN'));
+    localStorage.setItem(SYNC_AT_KEY, String(Date.now()));
+    updateUnsyncBadge();
     setSyncStatus(`✅ 同步完成：云端共 ${live.length} 条`, 'ok');
     showToast('☁ 已同步 ' + live.length + ' 条');
     refreshCloudInfo();
@@ -2619,6 +3269,9 @@ function escapeHtml(str) {
   // 表单不再预填示例数据——示例都在各字段的灰色提示（placeholder）里
   updateLivePrice();
   updateTokenRemind();
+  updateUnsyncBadge();
+  applyRateOverride();
+  setTimeout(autoApplyRate, 800); // 汇率自动：失败静默回落 7.3
   // 不再自动拉取云端：必须手动点「☁ 同步」，避免删掉的记录一刷新就复活
 })();
 
@@ -2665,6 +3318,20 @@ function escapeHtml(str) {
       <button type="button" id="delLocal">只删这台设备（云端保留，同步会回来）</button>
       <button type="button" id="delBoth" class="btn-danger2">本机 + 云端一起删（彻底删除）</button>
       <button type="button" id="delCancel">取消</button>
+    </div>
+  </div>
+</div>
+
+<!-- 费率表编辑弹窗 -->
+<div class="modal-mask" id="rateModal">
+  <div class="modal-box">
+    <div class="modal-title">✎ 编辑 FBA 费率表</div>
+    <div class="modal-sub" id="rateModalSub"></div>
+    <div class="rate-edit-list" id="rateEditList"></div>
+    <div class="modal-msg" id="rateMsg"></div>
+    <div class="modal-actions">
+      <button type="button" onclick="closeRateModal()">取消</button>
+      <button type="button" class="btn-solid" onclick="saveRateEditor()">保存</button>
     </div>
   </div>
 </div>
